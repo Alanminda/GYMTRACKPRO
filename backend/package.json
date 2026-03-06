@@ -1,7 +1,7 @@
 {
   "name": "gymtrack-api",
   "version": "1.0.0",
-  "description": "API para GymTrack Pro con MongoDB",
+  "description": "API para GymTrack Pro (modo temporal en memoria)",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -9,12 +9,11 @@
     "dev": "node --watch index.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^7.1.0",
-    "mongoose": "^8.4.1"
+    "jsonwebtoken": "^9.0.2"
   }
 }

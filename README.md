@@ -1,4 +1,4 @@
-# GYMTRACKPRO - Registro de Cambios
+﻿# GYMTRACKPRO - Registro de Cambios
 
 Este archivo lleva un registro exacto de cambios en el proyecto.
 
@@ -21,9 +21,61 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-06 13:xx - Backend - `feat`
+
+- Resumen: migracion del backend de almacenamiento en memoria a Supabase para auth, rutinas y progreso.
+- Archivos modificados:
+  - `backend/index.js` -> rutas `auth`, `routines` y `progress` ahora usan consultas a Supabase.
+  - `backend/supabaseClient.js` -> nuevo cliente Supabase con validacion de variables de entorno.
+  - `backend/package.json` -> se incluye dependencia `@supabase/supabase-js`.
+- Motivo:
+  - Persistir datos reales del backend y continuar con arquitectura remota estable para sincronizacion.
+- Impacto:
+  - El backend deja de depender de estructuras en memoria para entidades de negocio.
+  - Requiere configurar `SUPABASE_SERVICE_ROLE_KEY` real en `backend/.env`.
+- Verificacion:
+  - Sintaxis valida con `node --check backend/index.js`.
+  - Arranque validado: `gymtrack-api running on port 3000 (storage=supabase)`.
+
+---
+
+### 2026-03-06 13:xx - Documentacion - `chore`
+
+- Resumen: se limpia el historial para remover referencias a proveedor de base de datos descartado y se prepara entorno para migracion a Supabase.
+- Archivos modificados:
+  - `README.md` -> historial depurado y enfocado en estado actual del proyecto.
+  - `backend/.env.example` -> se agregan `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
+- Motivo:
+  - Evitar ruido historico que ya no aplica y facilitar siguiente etapa de backend con Supabase.
+- Impacto:
+  - Documentacion mas clara para trabajo futuro.
+  - Variables sensibles de Supabase definidas para configuracion local.
+- Verificacion:
+  - Revision manual de archivo y estructura final.
+
+---
+
+### 2026-03-06 13:xx - Backend - `refactor`
+
+- Resumen: backend temporal movido a almacenamiento en memoria mientras se define proveedor de base de datos definitivo.
+- Archivos modificados:
+  - `backend/index.js` -> almacenamiento en memoria para `users`, `routines`, `progress` y cache temporal de ejercicios.
+  - `backend/package.json` -> limpieza de dependencias de base de datos no usadas.
+  - `backend/.env.example` -> variables enfocadas en entorno actual (`JWT`, `RapidAPI`).
+- Motivo:
+  - Mantener pruebas funcionales del backend sin bloquear el flujo de desarrollo.
+- Impacto:
+  - El backend arranca localmente y conserva contratos de API.
+  - Los datos se pierden al reiniciar el proceso (estado temporal).
+- Verificacion:
+  - Sintaxis valida con `node --check backend/index.js`.
+  - Arranque validado: `gymtrack-api running on port 3000 (storage=memory)`.
+
+---
+
 ### 2026-03-06 11:xx - Data Layer - `refactor`
 
-- Resumen: se rediseÃ±o la base local Room para modo offline-first de rutinas y se preparo la sincronizacion con backend remoto (Mongo Atlas) + fuente externa de ejercicios.
+- Resumen: se rediseño la base local Room para modo offline-first de rutinas y se preparo la sincronizacion con backend remoto + fuente externa de ejercicios.
 - Archivos modificados:
   - `app/src/main/java/com/example/gymtrackpro/data/local/entities/RoutineEntity.kt` -> se agregan `remoteId`, `syncState`, `deleted`, `updatedAt` para sync diferida.
   - `app/src/main/java/com/example/gymtrackpro/data/local/entities/RoutineExerciseEntity.kt` -> se agregan estado de sync, soft delete y timestamp.
@@ -42,7 +94,7 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 - Impacto:
   - Los ejercicios siguen cacheados localmente desde API.
   - Las rutinas y ejercicios seleccionados ahora quedan preparados para persistencia local + sincronizacion remota.
-  - Se establece una base tecnica para backend en Mongo Atlas y consumo de ejercicios desde ExerciseDB.
+  - Se establece una base tecnica para backend remoto y consumo de ejercicios desde ExerciseDB.
 - Verificacion:
   - Revision de integracion entre entidades, DAOs, repositorio y API contracts.
   - Compilacion por terminal pendiente de entorno local (`JAVA_HOME` no configurado en shell).
