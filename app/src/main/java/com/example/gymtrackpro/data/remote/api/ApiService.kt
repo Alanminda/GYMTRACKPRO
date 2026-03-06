@@ -15,6 +15,35 @@ interface ApiService {
     @GET("exercises")
     suspend fun getExercises(@Header("Authorization") bearer: String): List<ExerciseDto>
 
+    @GET("routines")
+    suspend fun getRoutines(@Header("Authorization") bearer: String): List<RoutineRemoteDto>
+
+    @POST("routines")
+    suspend fun createRoutine(
+        @Header("Authorization") bearer: String,
+        @Body body: RoutineUpsertRequest
+    ): RoutineRemoteDto
+
+    @PUT("routines/{id}")
+    suspend fun updateRoutine(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String,
+        @Body body: RoutineUpsertRequest
+    ): RoutineRemoteDto
+
+    @HTTP(method = "DELETE", path = "routines/{id}", hasBody = false)
+    suspend fun deleteRoutine(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String
+    ): Response<Unit>
+
+    @PUT("routines/{id}/exercises")
+    suspend fun syncRoutineExercises(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String,
+        @Body body: RoutineExerciseSyncRequest
+    ): Response<Unit>
+
     @POST("progress")
     suspend fun sendProgress(
         @Header("Authorization") bearer: String,

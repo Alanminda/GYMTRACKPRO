@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.example.gymtrackpro.data.local.dao.ExerciseDao
 import com.example.gymtrackpro.data.local.dao.ProgressDao
+import com.example.gymtrackpro.data.local.dao.RoutineDao
+import com.example.gymtrackpro.data.local.dao.RoutineExerciseDao
 import com.example.gymtrackpro.data.local.dao.UserLocalDao
 import com.example.gymtrackpro.data.local.entities.*
 
@@ -15,10 +17,12 @@ import com.example.gymtrackpro.data.local.entities.*
         RoutineExerciseEntity::class,
         ProgressEntity::class
     ],
-    version = 1
+    version = 2
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userLocalDao(): UserLocalDao
     abstract fun exerciseDao(): ExerciseDao
     abstract fun progressDao(): ProgressDao
+    abstract fun routineDao(): RoutineDao
+    abstract fun routineExerciseDao(): RoutineExerciseDao
 }

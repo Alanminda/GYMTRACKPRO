@@ -8,5 +8,8 @@ import androidx.room.Entity
 )
 data class RoutineExerciseEntity(
     val routineId: Int,
-    val exerciseId: String
+    val exerciseId: String,
+    val syncState: String = "PENDING_UPSERT",
+    val deleted: Boolean = false,
+    val updatedAt: Long = System.currentTimeMillis()
 )

@@ -7,5 +7,8 @@ import androidx.room.PrimaryKey
 data class ExerciseEntity(
     @PrimaryKey val id: String, // para poder guardar el _id de Mongo
     val name: String,
-    val muscleGroup: String
+    val muscleGroup: String,
+    val bodyPart: String? = null,
+    val equipment: String? = null,
+    val target: String? = null
 )
