@@ -21,6 +21,40 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-06 16:xx - Deploy Fix - `fix`
+
+- Resumen: correccion de crash en Railway por binario nativo de `bcrypt` incompatible con Linux.
+- Archivos modificados:
+  - `backend/index.js` -> cambio de `bcrypt` a `bcryptjs`.
+  - `backend/package.json` -> dependencia `bcrypt` reemplazada por `bcryptjs`.
+  - `backend/package-lock.json` -> lockfile actualizado.
+  - `backend/node_modules` -> removido del control de versiones (`git rm -r --cached`) para evitar subir binarios locales.
+- Motivo:
+  - Resolver error de deploy `invalid ELF header` en entorno Linux de Railway.
+- Impacto:
+  - El backend puede instalar dependencias compatibles en build remoto.
+  - Se evita que artefactos locales de Windows rompan despliegues.
+- Verificacion:
+  - Sintaxis valida con `node --check backend/index.js`.
+  - Error de puerto local (`EADDRINUSE`) confirma que habia un proceso backend activo ya escuchando en `3000`.
+
+---
+
+### 2026-03-06 13:xx - Deploy - `chore`
+
+- Resumen: se deja el backend preparado para despliegue externo (Railway) con Supabase y se documenta la diferencia de conexion entre emulador y dispositivo fisico.
+- Archivos modificados:
+  - `README.md` -> registro de preparacion para publicacion y pruebas multi-dispositivo.
+- Motivo:
+  - Permitir que cualquier dispositivo consuma el backend sin depender de IP local de desarrollo.
+- Impacto:
+  - Se consolida flujo objetivo: Android -> backend publico (Railway) -> Supabase.
+  - Se evita confusion de red local (`10.0.2.2` solo emulador; IP LAN para telefono fisico).
+- Verificacion:
+  - Backend inicia correctamente en modo Supabase: `gymtrack-api running on port 3000 (storage=supabase)`.
+
+---
+
 ### 2026-03-06 13:xx - Backend - `feat`
 
 - Resumen: migracion del backend de almacenamiento en memoria a Supabase para auth, rutinas y progreso.
