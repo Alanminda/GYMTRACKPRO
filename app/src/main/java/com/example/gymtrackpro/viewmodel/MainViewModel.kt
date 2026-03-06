@@ -4,9 +4,7 @@ import androidx.lifecycle.*
 import com.example.gymtrackpro.data.repository.GymRepository
 import kotlinx.coroutines.launch
 
-class MainViewModel(
-    private val repository: GymRepository
-) : ViewModel() {
+class MainViewModel(private val repository: GymRepository) : ViewModel() {
 
     // Ahora observamos la base de datos local (Room) en lugar de pedir directamente a la API
     val exercises = repository.observeExercisesLocal().asLiveData()
