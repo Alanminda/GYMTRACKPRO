@@ -5,14 +5,14 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.example.gymtrackpro.databinding.ActivityLoginBinding
+import com.example.gymtrackpro.databinding.ActivityRegisterBinding
 import com.example.gymtrackpro.ui.home.HomeActivity
 import com.example.gymtrackpro.utils.AppProvider
 import com.example.gymtrackpro.utils.ViewModelFactory
 
-class LoginActivity : AppCompatActivity() {
+class RegisterActivity : AppCompatActivity() {
 
-    private lateinit var b: ActivityLoginBinding
+    private lateinit var b: ActivityRegisterBinding
 
     private val vm: AuthViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
@@ -20,26 +20,19 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        b = ActivityLoginBinding.inflate(layoutInflater)
+        b = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        vm.checkSession()
-
-        // Botón para entrar sin registro (Modo Invitado)
-        b.btnGuest.setOnClickListener {
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
-        }
-
-        b.btnLogin.setOnClickListener {
-            vm.login(
+        b.btnCreateAccount.setOnClickListener {
+            vm.register(
+                name = b.etName.text.toString().trim(),
                 email = b.etEmail.text.toString().trim(),
                 password = b.etPassword.text.toString()
             )
         }
 
-        b.btnRegister.setOnClickListener {
-            startActivity(Intent(this, RegisterActivity::class.java))
+        b.btnBackToLogin.setOnClickListener {
+            finish()
         }
 
         vm.loading.observe(this) { isLoading ->
