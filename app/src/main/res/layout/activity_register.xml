@@ -35,7 +35,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Inicia sesion para continuar"
+                android:text="Crea tu cuenta"
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -58,6 +58,22 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:hint="Nombre"
+                        app:boxBackgroundMode="outline">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionNext"
+                            android:inputType="textPersonName"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
                         android:hint="Correo electronico"
                         app:boxBackgroundMode="outline">
 
@@ -88,30 +104,21 @@
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnLogin"
+                        android:id="@+id/btnCreateAccount"
                         style="@style/Widget.Material3.Button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="20dp"
                         android:minHeight="52dp"
-                        android:text="Iniciar sesion" />
+                        android:text="Crear cuenta" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRegister"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="52dp"
-                        android:text="Registrarme" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnGuest"
+                        android:id="@+id/btnBackToLogin"
                         style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Entrar como invitado" />
+                        android:text="Volver al login" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tvError"
