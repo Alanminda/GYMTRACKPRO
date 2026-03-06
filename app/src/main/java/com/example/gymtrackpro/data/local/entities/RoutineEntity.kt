@@ -12,10 +12,14 @@ import androidx.room.*
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("userId")]
+    indices = [Index("userId"), Index(value = ["remoteId"], unique = true)]
 )
 data class RoutineEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val remoteId: String? = null,
     val name: String,
-    val userId: Int
+    val userId: Int,
+    val syncState: String = "PENDING_UPSERT",
+    val deleted: Boolean = false,
+    val updatedAt: Long = System.currentTimeMillis()
 )

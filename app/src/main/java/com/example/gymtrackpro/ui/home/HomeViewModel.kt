@@ -30,6 +30,6 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     fun syncProgress() {
-        viewModelScope.launch { repo.syncPendingProgress() }
+        viewModelScope.launch { repo.syncAllPending() }
     }
 }
