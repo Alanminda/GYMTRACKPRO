@@ -5,35 +5,47 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
+    <EditText
+        android:id="@+id/etSearch"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Buscar ejercicio"
+        android:inputType="text"
+        app:layout_constraintEnd_toStartOf="@id/btnHome"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnHome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Home"
+        app:layout_constraintBottom_toBottomOf="@id/etSearch"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/etSearch" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvExercises"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="12dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@id/btnOpenExercises"
         app:layout_constraintBottom_toTopOf="@id/tvError"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <Button
-        android:id="@+id/btnOpenExercises"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ver ejercicios"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/etSearch" />
 
     <TextView
-        android:id="@+id/tvEmptyRoutines"
+        android:id="@+id/tvEmptyExercises"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No hay rutinas"
+        android:text="No hay ejercicios"
         android:textColor="#666666"
-        android:textSize="16sp"
-        app:layout_constraintTop_toTopOf="@id/rvExercises"
         app:layout_constraintBottom_toBottomOf="@id/rvExercises"
+        app:layout_constraintEnd_toEndOf="@id/rvExercises"
         app:layout_constraintStart_toStartOf="@id/rvExercises"
-        app:layout_constraintEnd_toEndOf="@id/rvExercises" />
+        app:layout_constraintTop_toTopOf="@id/rvExercises" />
 
     <TextView
         android:id="@+id/tvError"
@@ -41,28 +53,18 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textColor="#FF0000"
-        app:layout_constraintBottom_toTopOf="@id/btnAddRoutine"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <Button
-        android:id="@+id/btnAddRoutine"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_marginBottom="12dp"
-        android:text="+"
-        android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ProgressBar
         android:id="@+id/progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

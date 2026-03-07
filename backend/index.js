@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -31,6 +31,8 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "gymtrack-api", storage: "supabase" });
 });
 
+const EXTERNAL_PAGE_SIZE = 200;
+const MAX_CACHE_ITEMS = 2400;
 let exerciseCache = { updatedAt: 0, items: [] };
 
 function auth(req, res, next) {
@@ -60,7 +62,7 @@ function mapExerciseDto(item) {
   };
 }
 
-async function fetchExercisesFromRapidApi(limit = 200, offset = 0) {
+async function fetchExercisesFromRapidApi(limit = EXTERNAL_PAGE_SIZE, offset = 0) {
   if (!RAPIDAPI_KEY) return [];
 
   const url = `${EXERCISEDB_BASE_URL}/exercises?limit=${limit}&offset=${offset}`;
@@ -81,20 +83,76 @@ async function fetchExercisesFromRapidApi(limit = 200, offset = 0) {
   return data.map(mapExerciseDto).filter(Boolean);
 }
 
-async function getExercisesOfflineFirst() {
+function isCacheFresh() {
   const ttlMs = Number(EXERCISE_CACHE_TTL_MINUTES) * 60 * 1000;
-  const cacheFresh = exerciseCache.items.length > 0 && Date.now() - exerciseCache.updatedAt < ttlMs;
-  if (cacheFresh) return exerciseCache.items;
+  return exerciseCache.items.length > 0 && Date.now() - exerciseCache.updatedAt < ttlMs;
+}
 
+async function refillCacheIfExpired() {
+  if (isCacheFresh()) return;
   try {
-    const remoteItems = await fetchExercisesFromRapidApi(200, 0);
-    if (remoteItems.length > 0) {
-      exerciseCache = { updatedAt: Date.now(), items: remoteItems };
+    const firstPage = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, 0);
+    if (firstPage.length > 0) {
+      exerciseCache = { updatedAt: Date.now(), items: firstPage };
     }
-    return exerciseCache.items;
   } catch {
-    return exerciseCache.items;
+    // Si falla remoto, se conserva cache anterior.
   }
+}
+
+async function ensureCacheSize(minSize) {
+  await refillCacheIfExpired();
+
+  while (exerciseCache.items.length < minSize && exerciseCache.items.length < MAX_CACHE_ITEMS) {
+    const nextOffset = exerciseCache.items.length;
+    const page = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, nextOffset);
+    if (!page.length) break;
+
+    const existing = new Set(exerciseCache.items.map((e) => e.id));
+    const merged = [...exerciseCache.items];
+    for (const item of page) {
+      if (!existing.has(item.id)) {
+        merged.push(item);
+        existing.add(item.id);
+      }
+    }
+    exerciseCache = { updatedAt: Date.now(), items: merged };
+
+    if (page.length < EXTERNAL_PAGE_SIZE) break;
+  }
+}
+
+async function expandCacheByOnePage() {
+  if (exerciseCache.items.length >= MAX_CACHE_ITEMS) return false;
+
+  const nextOffset = exerciseCache.items.length;
+  const page = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, nextOffset);
+  if (!page.length) return false;
+
+  const existing = new Set(exerciseCache.items.map((e) => e.id));
+  const merged = [...exerciseCache.items];
+  for (const item of page) {
+    if (!existing.has(item.id)) {
+      merged.push(item);
+      existing.add(item.id);
+    }
+  }
+  exerciseCache = { updatedAt: Date.now(), items: merged };
+  return page.length === EXTERNAL_PAGE_SIZE && exerciseCache.items.length < MAX_CACHE_ITEMS;
+}
+
+function filterExercises(list, q) {
+  const query = (q || "").trim().toLowerCase();
+  if (!query) return list;
+  return list.filter((e) => {
+    return (
+      e.name.toLowerCase().includes(query) ||
+      (e.muscleGroup || "").toLowerCase().includes(query) ||
+      (e.bodyPart || "").toLowerCase().includes(query) ||
+      (e.target || "").toLowerCase().includes(query) ||
+      (e.equipment || "").toLowerCase().includes(query)
+    );
+  });
 }
 
 app.post("/auth/register", async (req, res) => {
@@ -163,10 +221,27 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.get("/exercises", auth, async (_req, res) => {
+app.get("/exercises", auth, async (req, res) => {
   try {
-    const items = await getExercisesOfflineFirst();
-    return res.json(items);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+    const q = String(req.query.q || "");
+
+    if (!q.trim()) {
+      await ensureCacheSize(Math.min(offset + limit, MAX_CACHE_ITEMS));
+      return res.json(exerciseCache.items.slice(offset, offset + limit));
+    }
+
+    await refillCacheIfExpired();
+
+    let filtered = filterExercises(exerciseCache.items, q);
+    let hasMoreRemote = exerciseCache.items.length < MAX_CACHE_ITEMS;
+    while (filtered.length < offset + limit && hasMoreRemote) {
+      hasMoreRemote = await expandCacheByOnePage();
+      filtered = filterExercises(exerciseCache.items, q);
+    }
+
+    return res.json(filtered.slice(offset, offset + limit));
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener ejercicios", detail: error.message });
   }
