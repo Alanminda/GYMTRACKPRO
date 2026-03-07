@@ -40,8 +40,21 @@ class GymRepository(
     fun observeExercisesLocal(): Flow<List<ExerciseEntity>> = exerciseDao.observeAll()
 
     suspend fun refreshExercisesFromApi() {
+        val firstPage = fetchExercisesPageFromApi(query = null, limit = 200, offset = 0)
+        if (firstPage.isNotEmpty()) {
+            exerciseDao.upsertAll(firstPage)
+        }
+    }
+
+    suspend fun fetchExercisesPageFromApi(query: String?, limit: Int, offset: Int): List<ExerciseEntity> {
         val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
-        val remote = api.getExercises("Bearer ${session.token}")
+        val remote = api.getExercises(
+            bearer = "Bearer ${session.token}",
+            limit = limit,
+            offset = offset,
+            q = query?.takeIf { it.isNotBlank() }
+        )
+
         val mapped = remote.mapNotNull { dto ->
             val resolvedId = dto.mongoId ?: dto.id
             resolvedId?.let {
@@ -55,7 +68,11 @@ class GymRepository(
                 )
             }
         }
-        exerciseDao.upsertAll(mapped)
+
+        if (mapped.isNotEmpty()) {
+            exerciseDao.upsertAll(mapped)
+        }
+        return mapped
     }
 
     fun observeProgress(userId: Int): Flow<List<ProgressEntity>> = progressDao.observeByUser(userId)

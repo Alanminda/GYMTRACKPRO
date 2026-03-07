@@ -1,13 +1,16 @@
 package com.example.gymtrackpro.ui.home
 
-import androidx.lifecycle.*
-import com.example.gymtrackpro.data.local.entities.ExerciseEntity
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import com.example.gymtrackpro.data.repository.GymRepository
 import kotlinx.coroutines.launch
 
 class HomeViewModel(private val repo: GymRepository) : ViewModel() {
 
-    val exercises = repo.observeExercisesLocal().asLiveData()
+    val routines = repo.observeRoutinesLocal().asLiveData()
 
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
@@ -15,21 +18,48 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
     private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
 
-    fun refreshExercises() {
+    private val _routineMessage = MutableLiveData<String?>(null)
+    val routineMessage: LiveData<String?> = _routineMessage
+
+    fun syncData() {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
-                repo.refreshExercisesFromApi()
+                repo.syncAllPending()
             } catch (e: Exception) {
-                _error.value = "Sin conexión o error API"
+                _error.value = "Error al sincronizar"
             } finally {
                 _loading.value = false
             }
         }
     }
 
-    fun syncProgress() {
-        viewModelScope.launch { repo.syncAllPending() }
+    fun createRoutine(name: String, timeMinutes: String) {
+        val cleanName = name.trim()
+        val cleanTime = timeMinutes.trim()
+
+        if (cleanName.isBlank() || cleanTime.isBlank()) {
+            _routineMessage.value = "Completa nombre y tiempo"
+            return
+        }
+
+        viewModelScope.launch {
+            _loading.value = true
+            try {
+                // Actualmente la tabla remota guarda 'name'; el tiempo se serializa en el nombre.
+                repo.createRoutine("$cleanName (${cleanTime} min)")
+                repo.syncPendingRoutines()
+                _routineMessage.value = "Rutina creada"
+            } catch (e: Exception) {
+                _routineMessage.value = "No se pudo crear rutina"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    fun clearRoutineMessage() {
+        _routineMessage.value = null
     }
 }

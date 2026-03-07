@@ -13,7 +13,12 @@ interface ApiService {
     suspend fun login(@Body body: LoginRequest): AuthResponse
 
     @GET("exercises")
-    suspend fun getExercises(@Header("Authorization") bearer: String): List<ExerciseDto>
+    suspend fun getExercises(
+        @Header("Authorization") bearer: String,
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int,
+        @Query("q") q: String? = null
+    ): List<ExerciseDto>
 
     @GET("routines")
     suspend fun getRoutines(@Header("Authorization") bearer: String): List<RoutineRemoteDto>

@@ -1,4 +1,4 @@
-﻿# GYMTRACKPRO - Registro de Cambios
+# GYMTRACKPRO - Registro de Cambios
 
 Este archivo lleva un registro exacto de cambios en el proyecto.
 
@@ -20,6 +20,136 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 ---
 
 ## Historial
+
+### 2026-03-07 12:xx - Exercises Search/Scroll Stabilization - `fix`
+
+- Resumen: se corrige busqueda de ejercicios y scroll infinito para evitar cortes prematuros y resultados mezclados al escribir rapido.
+- Archivos modificados:
+  - `backend/index.js` -> `GET /exercises` ahora, con `q`, sigue cargando paginas externas hasta cubrir realmente `offset + limit` o agotar fuente remota.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> control de corrutinas por generacion + cancelacion de carga anterior para evitar race conditions en busqueda.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> prefetch automatico cuando la lista inicial no llena pantalla y no hay scroll aun.
+- Motivo:
+  - El buscador podia fallar al cambiar texto durante una carga activa y el infinite scroll podia frenarse cuando no habia desplazamiento inicial.
+- Impacto:
+  - Busqueda estable con resultados del query actual.
+  - Scroll infinito continua cargando lotes incluso en pantallas donde el primer lote no alcanza para desplazar.
+- Verificacion:
+  - Revision de flujo de carga (UI -> ViewModel -> Repository -> API) y control de estados de paginacion completada.
+  - Compilacion local por terminal pendiente (`JAVA_HOME` no configurado en shell).
+
+---
+
+### 2026-03-07 11:xx - Exercises Pagination/Search - `feat`
+
+- Resumen: se mejora carga de ejercicios con paginacion remota real + busqueda remota, evitando limitar resultados solo a items ya cargados en pantalla.
+- Archivos modificados:
+  - `backend/index.js` -> `GET /exercises` ahora acepta `limit`, `offset`, `q` y expande cache por lotes para responder paginas grandes.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt` -> contrato de `getExercises` actualizado con query params de paginacion y busqueda.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `fetchExercisesPageFromApi(query, limit, offset)` para traer paginas remotas y persistirlas en Room.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> corrutinas con debounce de busqueda (`onQueryChanged`) + infinite scroll (`loadMoreIfNeeded` / `loadNextPage`) y pagina aumentada a `80`.
+- Motivo:
+  - Resolver que aparecian pocos ejercicios y que la busqueda solo funcionaba sobre los ya pintados.
+- Impacto:
+  - Se muestran muchos mas ejercicios conforme haces scroll.
+  - La busqueda trae resultados remotos por texto y no queda limitada al primer lote local.
+  - La pantalla mantiene UX fluida usando corrutinas para debounce y carga incremental.
+- Verificacion:
+  - Revision de flujo end-to-end en backend/app y compatibilidad de parametros en Retrofit/Repository/ViewModel.
+  - Prueba final en dispositivo/emulador pendiente.
+
+---
+
+### 2026-03-07 10:xx - Android Build - `fix`
+
+- Resumen: se corrige fallo de `mergeDebugResources` por caracter BOM (`U+FEFF`) al inicio de `activity_exercises.xml`.
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_exercises.xml` -> regrabado sin BOM (UTF-8 limpio).
+- Motivo:
+  - Resolver error de parser XML: `mismatched input '﻿'` y `root is null` durante Data Binding.
+- Impacto:
+  - Se desbloquea el merge de recursos para build `debug`.
+- Verificacion:
+  - Firma inicial del archivo validada sin BOM (`3C 3F 78`).
+
+---
+
+### 2026-03-07 10:xx - Exercises + Routines Flow - `refactor`
+
+- Resumen: se ajusta flujo para carga masiva de ejercicios con infinite scroll por corrutinas y se mueve creacion de rutina al boton `+` de Home.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> corrutinas en `loadExercises()` y `loadMoreIfNeeded()` para carga incremental (infinite scroll) y filtrado por busqueda.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> elimina logica de crear rutina y agrega `RecyclerView.OnScrollListener` para pedir mas items.
+  - `app/src/main/res/layout/activity_exercises.xml` -> elimina boton `Crear rutina`; mantiene buscador + boton Home + lista.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> nueva logica de `createRoutine(name, timeMinutes)` con corrutina para guardar y sincronizar.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> boton `+` abre formulario (`dialog_create_routine`) y ejecuta creacion de rutina.
+- Motivo:
+  - Mostrar muchos ejercicios de forma escalable y dejar la creacion de rutinas en el punto principal del modulo Home.
+- Impacto:
+  - Ejercicios cargan por lotes y se extienden al hacer scroll.
+  - El formulario de rutina queda centralizado en Home, con nombre y tiempo requeridos.
+  - La corrutina principal de infinite scroll queda en `ExercisesViewModel.loadMoreIfNeeded()`.
+- Verificacion:
+  - Revision de referencias de IDs, observers y navegacion.
+  - Compilacion final pendiente de validacion en Android Studio local.
+
+---
+
+### 2026-03-07 10:xx - Exercises Screen - `feat`
+
+- Resumen: se agrega pantalla de ejercicios con tarjetas, carga por corrutinas, buscador, boton `Home` y formulario para crear rutina con nombre + tiempo.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> nueva pantalla de ejercicios con filtro en tiempo real y dialogo de creacion de rutina.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> logica de carga de ejercicios con corrutinas, filtrado por busqueda y alta de rutina.
+  - `app/src/main/res/layout/activity_exercises.xml` -> layout con barra de busqueda, boton Home, lista de tarjetas y boton `Crear rutina`.
+  - `app/src/main/res/layout/dialog_create_routine.xml` -> formulario de nombre y tiempo de rutina.
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt` -> soporte para `ExercisesViewModel`.
+  - `app/src/main/AndroidManifest.xml` -> registro de `ExercisesActivity`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> boton para navegar a la nueva pantalla de ejercicios.
+  - `app/src/main/res/layout/activity_home.xml` -> agrega boton `Ver ejercicios`.
+- Motivo:
+  - Mostrar catalogo grande de ejercicios de forma usable y preparar el flujo inicial de creacion de rutinas desde UI.
+- Impacto:
+  - El usuario puede buscar ejercicios rapidamente.
+  - Se habilita formulario inicial para crear rutina con nombre y duracion (guardada en nombre como texto).
+- Verificacion:
+  - Revision de referencias de IDs, binding y navegacion entre Home y Exercises.
+  - Compilacion final pendiente de ejecucion local en Android Studio.
+
+---
+
+### 2026-03-07 09:xx - Android Build - `fix`
+
+- Resumen: se corrige error de `mergeDebugResources` causado por parseo invalido de `activity_home.xml`.
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_home.xml` -> XML reescrito en formato limpio/ASCII para evitar fallo de parser en Data Binding.
+- Motivo:
+  - Resolver bloqueo de compilacion: `Cannot read field \"elmName\" because \"root\" is null`.
+- Impacto:
+  - Se restablece compilacion de recursos en `debug` para pantalla Home.
+- Verificacion:
+  - Revision directa del XML final y estructura de IDs usada por `HomeActivity`.
+  - Compilacion local en Android Studio pendiente de validacion final en tu entorno.
+
+---
+
+### 2026-03-07 09:xx - Home UI - `feat`
+
+- Resumen: `HomeActivity` ahora muestra rutinas del usuario en lugar de ejercicios, con estado vacio y boton `+` inferior para iniciar alta de rutinas.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> expone `routines` desde repositorio y sincronizacion general con `syncData()`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> cambia adapter a rutinas, muestra `No hay rutinas` cuando lista vacia y agrega accion de boton `+`.
+  - `app/src/main/res/layout/activity_home.xml` -> nuevo layout orientado a lista de rutinas + texto vacio + boton `+` abajo.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> nuevo adapter para renderizar `RoutineEntity` en la lista.
+- Motivo:
+  - Cambiar enfoque de Home para mostrar primero las rutinas del usuario y preparar flujo de creacion de rutinas.
+- Impacto:
+  - Si no hay rutinas, la pantalla muestra `No hay rutinas`.
+  - Se agrega punto de entrada visual para futura funcion de crear rutina.
+- Verificacion:
+  - Revision de referencias de binding/IDs y flujo de observacion de datos completada.
+  - Compilacion por terminal pendiente de entorno local (`JAVA_HOME` no configurado en shell).
+
+---
 
 ### 2026-03-06 16:xx - Deploy Fix - `fix`
 

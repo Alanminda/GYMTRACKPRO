@@ -26,6 +26,10 @@
         <activity
             android:name=".ui.home.HomeActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.exercises.ExercisesActivity"
+            android:exported="false" />
             
         <activity
             android:name=".MainActivity"
