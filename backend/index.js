@@ -32,8 +32,9 @@ app.get("/", (_req, res) => {
 });
 
 const EXTERNAL_PAGE_SIZE = 200;
-const MAX_CACHE_ITEMS = 2400;
-let exerciseCache = { updatedAt: 0, items: [] };
+const MAX_CACHE_ITEMS = Number(process.env.EXERCISE_CACHE_MAX_ITEMS || "20000");
+const MAX_EXPANSION_STEPS_PER_REQUEST = 80;
+let exerciseCache = { updatedAt: 0, items: [], remoteOffset: 0, sourceExhausted: false };
 
 function auth(req, res, next) {
   const h = req.headers.authorization || "";
@@ -92,9 +93,12 @@ async function refillCacheIfExpired() {
   if (isCacheFresh()) return;
   try {
     const firstPage = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, 0);
-    if (firstPage.length > 0) {
-      exerciseCache = { updatedAt: Date.now(), items: firstPage };
-    }
+    exerciseCache = {
+      updatedAt: Date.now(),
+      items: firstPage,
+      remoteOffset: firstPage.length,
+      sourceExhausted: firstPage.length < EXTERNAL_PAGE_SIZE || firstPage.length >= MAX_CACHE_ITEMS,
+    };
   } catch {
     // Si falla remoto, se conserva cache anterior.
   }
@@ -103,31 +107,25 @@ async function refillCacheIfExpired() {
 async function ensureCacheSize(minSize) {
   await refillCacheIfExpired();
 
-  while (exerciseCache.items.length < minSize && exerciseCache.items.length < MAX_CACHE_ITEMS) {
-    const nextOffset = exerciseCache.items.length;
-    const page = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, nextOffset);
-    if (!page.length) break;
-
-    const existing = new Set(exerciseCache.items.map((e) => e.id));
-    const merged = [...exerciseCache.items];
-    for (const item of page) {
-      if (!existing.has(item.id)) {
-        merged.push(item);
-        existing.add(item.id);
-      }
-    }
-    exerciseCache = { updatedAt: Date.now(), items: merged };
-
-    if (page.length < EXTERNAL_PAGE_SIZE) break;
+  let steps = 0;
+  while (exerciseCache.items.length < minSize && !exerciseCache.sourceExhausted && steps < MAX_EXPANSION_STEPS_PER_REQUEST) {
+    const canContinue = await expandCacheByOnePage();
+    if (!canContinue) break;
+    steps += 1;
   }
 }
 
 async function expandCacheByOnePage() {
-  if (exerciseCache.items.length >= MAX_CACHE_ITEMS) return false;
+  if (exerciseCache.items.length >= MAX_CACHE_ITEMS || exerciseCache.sourceExhausted) {
+    exerciseCache = { ...exerciseCache, sourceExhausted: true };
+    return false;
+  }
 
-  const nextOffset = exerciseCache.items.length;
-  const page = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, nextOffset);
-  if (!page.length) return false;
+  const page = await fetchExercisesFromRapidApi(EXTERNAL_PAGE_SIZE, exerciseCache.remoteOffset);
+  if (!page.length) {
+    exerciseCache = { ...exerciseCache, updatedAt: Date.now(), sourceExhausted: true };
+    return false;
+  }
 
   const existing = new Set(exerciseCache.items.map((e) => e.id));
   const merged = [...exerciseCache.items];
@@ -137,8 +135,18 @@ async function expandCacheByOnePage() {
       existing.add(item.id);
     }
   }
-  exerciseCache = { updatedAt: Date.now(), items: merged };
-  return page.length === EXTERNAL_PAGE_SIZE && exerciseCache.items.length < MAX_CACHE_ITEMS;
+
+  const remoteOffset = exerciseCache.remoteOffset + page.length;
+  const reachedSourceEnd = page.length < EXTERNAL_PAGE_SIZE;
+  const reachedCacheMax = merged.length >= MAX_CACHE_ITEMS;
+  exerciseCache = {
+    updatedAt: Date.now(),
+    items: reachedCacheMax ? merged.slice(0, MAX_CACHE_ITEMS) : merged,
+    remoteOffset,
+    sourceExhausted: reachedSourceEnd || reachedCacheMax,
+  };
+
+  return !exerciseCache.sourceExhausted;
 }
 
 function filterExercises(list, q) {
@@ -235,10 +243,11 @@ app.get("/exercises", auth, async (req, res) => {
     await refillCacheIfExpired();
 
     let filtered = filterExercises(exerciseCache.items, q);
-    let hasMoreRemote = exerciseCache.items.length < MAX_CACHE_ITEMS;
-    while (filtered.length < offset + limit && hasMoreRemote) {
-      hasMoreRemote = await expandCacheByOnePage();
+    let steps = 0;
+    while (filtered.length < offset + limit && !exerciseCache.sourceExhausted && steps < MAX_EXPANSION_STEPS_PER_REQUEST) {
+      await expandCacheByOnePage();
       filtered = filterExercises(exerciseCache.items, q);
+      steps += 1;
     }
 
     return res.json(filtered.slice(offset, offset + limit));

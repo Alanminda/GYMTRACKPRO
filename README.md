@@ -21,6 +21,41 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-07 13:xx - Backend Pagination Integrity - `fix`
+
+- Resumen: se corrige paginacion de ejercicios para infinite scroll real, evitando cortes por offset basado en cache deduplicada.
+- Archivos modificados:
+  - `backend/index.js` -> cache de ejercicios ahora mantiene `remoteOffset` y `sourceExhausted`; la expansion usa offset remoto real y no el tamaño de cache local.
+  - `backend/index.js` -> `GET /exercises` con `q` expande cache por pasos hasta cubrir `offset + limit` o agotar fuente remota.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> se restaura estrategia de infinite scroll por lotes (sin auto-carga total), con `PAGE_SIZE=100`.
+  - `backend/.env.example` -> nueva variable `EXERCISE_CACHE_MAX_ITEMS`.
+- Motivo:
+  - Aun faltaban ejercicios porque la paginacion podia detenerse por calculo de offset incorrecto en backend y por estrategia de autoload en app.
+- Impacto:
+  - El backend puede seguir trayendo mas paginas correctamente.
+  - La app vuelve a comportamiento de infinite scroll consistente.
+- Verificacion:
+  - Sintaxis backend validada con `node --check backend/index.js`.
+  - Prueba funcional de scroll/busqueda pendiente en emulador/dispositivo.
+
+---
+
+### 2026-03-07 12:xx - Exercises Auto Full Load - `refactor`
+
+- Resumen: la pantalla de ejercicios deja de depender del scroll para completar carga y ahora auto-descarga todos los lotes (hasta tope de seguridad) al entrar o al buscar.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> nuevo flujo `loadAllPagesForCurrentQuery()` con corrutina que itera paginas remotas y acumula resultados hasta fin de fuente o `MAX_AUTO_ITEMS`.
+- Motivo:
+  - El usuario seguia viendo carga parcial porque infinite scroll requiere accion de desplazamiento.
+- Impacto:
+  - Se cargan muchos mas ejercicios automaticamente desde el inicio.
+  - La busqueda tambien completa lotes sin esperar scroll.
+- Verificacion:
+  - Revision de estados de paginacion y finalizacion (`endReached`) completada.
+  - Compilacion por terminal pendiente (`JAVA_HOME` no configurado en shell).
+
+---
+
 ### 2026-03-07 12:xx - Exercises Search/Scroll Stabilization - `fix`
 
 - Resumen: se corrige busqueda de ejercicios y scroll infinito para evitar cortes prematuros y resultados mezclados al escribir rapido.

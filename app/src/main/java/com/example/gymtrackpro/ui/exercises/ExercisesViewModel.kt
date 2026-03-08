@@ -100,6 +100,6 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     companion object {
-        private const val PAGE_SIZE = 80
+        private const val PAGE_SIZE = 100
     }
 }
