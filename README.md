@@ -21,6 +21,21 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 08:xx - Media Proxy Resilience - `fix`
+
+- Resumen: se fortalece el endpoint de media para que no dependa solo de una URL externa; ahora intenta descarga directa de imagen desde candidatos RapidAPI cuando falla fetch externo.
+- Archivos modificados:
+  - `backend/index.js` -> nuevo `fetchImageFromRapidApiCandidates(id)` y fallback interno en `GET /exercises/:id/media`.
+- Motivo:
+  - En Railway se detecto error `fetch failed` al descargar media por URL fallback externa.
+- Impacto:
+  - Mayor probabilidad de obtener imagen/GIF aun cuando un host externo no resuelve por DNS.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion funcional pendiente tras redeploy.
+
+---
+
 ### 2026-03-07 22:xx - Media Proxy Endpoint for DNS Issues - `fix`
 
 - Resumen: se agrega endpoint proxy de media para ejercicios y la app lo usa en detalle, evitando fallos por DNS del CDN externo en dispositivo local.
