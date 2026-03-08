@@ -141,6 +141,37 @@ async function resolveExerciseMediaUrl(id) {
   return normalizeGifUrl(detail.gifUrl, id);
 }
 
+async function fetchImageFromRapidApiCandidates(id) {
+  if (!RAPIDAPI_KEY) return null;
+  const candidates = [
+    `${EXERCISEDB_BASE_URL}/image?exerciseId=${id}`,
+    `${EXERCISEDB_BASE_URL}/image?exerciseId=${id}&resolution=180`,
+    `${EXERCISEDB_BASE_URL}/image?id=${id}`,
+    `${EXERCISEDB_BASE_URL}/exercises/image?exerciseId=${id}`,
+  ];
+
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      });
+      if (!response.ok) continue;
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("image")) continue;
+
+      const bytes = Buffer.from(await response.arrayBuffer());
+      return { bytes, contentType };
+    } catch {
+      // Probar siguiente candidato.
+    }
+  }
+  return null;
+}
+
 function isCacheFresh() {
   const ttlMs = Number(EXERCISE_CACHE_TTL_MINUTES) * 60 * 1000;
   return exerciseCache.items.length > 0 && Date.now() - exerciseCache.updatedAt < ttlMs;
@@ -382,17 +413,27 @@ app.get("/exercises/:id/media", async (req, res) => {
     if (!id) return res.status(400).json({ message: "Id requerido" });
 
     const mediaUrl = await resolveExerciseMediaUrl(id);
-    if (!mediaUrl) return res.status(404).json({ message: "Media no disponible" });
-
-    const response = await fetch(mediaUrl);
-    if (!response.ok) {
-      return res.status(404).json({ message: "No se pudo descargar media" });
+    if (mediaUrl) {
+      try {
+        const response = await fetch(mediaUrl);
+        if (response.ok) {
+          const contentType = response.headers.get("content-type") || "image/gif";
+          const bytes = Buffer.from(await response.arrayBuffer());
+          res.set("Content-Type", contentType);
+          return res.status(200).send(bytes);
+        }
+      } catch {
+        // Se intenta fallback directo con RapidAPI.
+      }
     }
 
-    const contentType = response.headers.get("content-type") || "image/gif";
-    const bytes = Buffer.from(await response.arrayBuffer());
-    res.set("Content-Type", contentType);
-    return res.status(200).send(bytes);
+    const rapidImage = await fetchImageFromRapidApiCandidates(id);
+    if (rapidImage) {
+      res.set("Content-Type", rapidImage.contentType);
+      return res.status(200).send(rapidImage.bytes);
+    }
+
+    return res.status(404).json({ message: "Media no disponible" });
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener media", detail: error.message });
   }
