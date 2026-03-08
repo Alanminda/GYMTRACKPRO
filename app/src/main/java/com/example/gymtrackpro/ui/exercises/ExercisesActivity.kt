@@ -23,9 +23,13 @@ class ExercisesActivity : AppCompatActivity() {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
 
+    private val targetRoutineId by lazy { intent.getIntExtra(EXTRA_TARGET_ROUTINE_ID, -1) }
+    private val isRoutineSelectionMode by lazy { targetRoutineId > 0 }
+
     private val adapter = ExerciseAdapter { exercise ->
         startActivity(Intent(this, ExerciseDetailActivity::class.java).apply {
             putExtra(ExerciseDetailActivity.EXTRA_ID, exercise.id)
+            putExtra(ExerciseDetailActivity.EXTRA_TARGET_ROUTINE_ID, targetRoutineId)
             putExtra(ExerciseDetailActivity.EXTRA_NAME, exercise.name)
             putExtra(ExerciseDetailActivity.EXTRA_MUSCLE_GROUP, exercise.muscleGroup)
             putExtra(ExerciseDetailActivity.EXTRA_BODY_PART, exercise.bodyPart)
@@ -46,7 +50,13 @@ class ExercisesActivity : AppCompatActivity() {
         b.rvExercises.layoutManager = LinearLayoutManager(this)
         b.rvExercises.setHasFixedSize(true)
         b.rvExercises.adapter = adapter
-        MainBottomNav.bind(this, b.bottomNav, R.id.nav_exercises)
+        if (isRoutineSelectionMode) {
+            b.bottomNav.visibility = View.GONE
+            b.tvSelectModeHint.visibility = View.VISIBLE
+        } else {
+            MainBottomNav.bind(this, b.bottomNav, R.id.nav_exercises)
+            b.tvSelectModeHint.visibility = View.GONE
+        }
         val lm = b.rvExercises.layoutManager as LinearLayoutManager
         b.rvExercises.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -80,6 +90,12 @@ class ExercisesActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        MainBottomNav.syncSelection(b.bottomNav, R.id.nav_exercises)
+        if (!isRoutineSelectionMode) {
+            MainBottomNav.syncSelection(b.bottomNav, R.id.nav_exercises)
+        }
+    }
+
+    companion object {
+        const val EXTRA_TARGET_ROUTINE_ID = "extra_target_routine_id"
     }
 }

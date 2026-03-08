@@ -122,6 +122,7 @@ class GymRepository(
     }
 
     fun observeRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeActiveByUser(userId)
+    suspend fun getRoutinesLocal(userId: Int = 1): List<RoutineEntity> = routineDao.getActiveByUser(userId)
     suspend fun hasPendingRoutineSync(): Boolean = routineDao.getPendingSync().isNotEmpty()
 
     suspend fun getRoutineExercises(routineId: Int): List<ExerciseEntity> {
@@ -182,6 +183,10 @@ class GymRepository(
                 updatedAt = System.currentTimeMillis()
             )
         )
+        val routine = routineDao.getById(routineId)
+        if (routine != null && !routine.deleted) {
+            routineDao.markPendingUpsert(routineId)
+        }
     }
 
     suspend fun removeExerciseFromRoutine(routineId: Int, exerciseId: String) {
@@ -190,11 +195,16 @@ class GymRepository(
             exerciseId = exerciseId,
             updatedAt = System.currentTimeMillis()
         )
+        val routine = routineDao.getById(routineId)
+        if (routine != null && !routine.deleted) {
+            routineDao.markPendingUpsert(routineId)
+        }
     }
 
     suspend fun syncPendingRoutines() {
         val session = userDao.getSession() ?: return
         val bearer = "Bearer ${session.token}"
+        ensureRoutinePendingFromRoutineExerciseChanges()
         val pendingRoutines = routineDao.getPendingSync()
 
         for (routine in pendingRoutines) {
@@ -309,6 +319,19 @@ class GymRepository(
         )
         if (resp.isSuccessful) {
             routineExerciseDao.markRoutineSynced(routineId)
+        }
+    }
+
+    private suspend fun ensureRoutinePendingFromRoutineExerciseChanges() {
+        val pendingRoutineIds = routineExerciseDao.getPendingSync()
+            .map { it.routineId }
+            .distinct()
+
+        for (routineId in pendingRoutineIds) {
+            val routine = routineDao.getById(routineId) ?: continue
+            if (!routine.deleted) {
+                routineDao.markPendingUpsert(routineId)
+            }
         }
     }
 }

@@ -24,6 +24,18 @@
             android:inputType="text" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <TextView
+        android:id="@+id/tvSelectModeHint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Selecciona un ejercicio para anadirlo a la rutina"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchInputLayout" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvExercises"
         android:layout_width="0dp"
@@ -35,7 +47,7 @@
         app:layout_constraintBottom_toTopOf="@id/tvError"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchInputLayout" />
+        app:layout_constraintTop_toBottomOf="@id/tvSelectModeHint" />
 
     <TextView
         android:id="@+id/tvEmptyExercises"

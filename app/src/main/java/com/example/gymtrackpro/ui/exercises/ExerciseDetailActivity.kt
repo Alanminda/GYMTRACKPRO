@@ -1,7 +1,10 @@
 package com.example.gymtrackpro.ui.exercises
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
@@ -9,14 +12,26 @@ import com.bumptech.glide.RequestBuilder
 import com.example.gymtrackpro.data.local.entities.ExerciseEntity
 import com.example.gymtrackpro.data.remote.api.ApiClient
 import com.example.gymtrackpro.databinding.ActivityExerciseDetailBinding
+import com.example.gymtrackpro.ui.routines.RoutinePickerActivity
 import com.example.gymtrackpro.utils.AppProvider
 import com.example.gymtrackpro.utils.ViewModelFactory
+import com.google.android.material.snackbar.Snackbar
 
 class ExerciseDetailActivity : AppCompatActivity() {
 
     private lateinit var b: ActivityExerciseDetailBinding
     private val vm: ExerciseDetailViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
+    }
+    private var currentExerciseId: String = ""
+    private val routinePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK) return@registerForActivityResult
+        val routineId = result.data?.getIntExtra(RoutinePickerActivity.EXTRA_SELECTED_ROUTINE_ID, -1) ?: -1
+        if (routineId > 0 && currentExerciseId.isNotBlank()) {
+            vm.addExerciseToRoutine(routineId, currentExerciseId)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,6 +40,8 @@ class ExerciseDetailActivity : AppCompatActivity() {
         setContentView(b.root)
 
         val exerciseId = intent.getStringExtra(EXTRA_ID).orEmpty()
+        currentExerciseId = exerciseId
+        val targetRoutineId = intent.getIntExtra(EXTRA_TARGET_ROUTINE_ID, -1)
         val name = intent.getStringExtra(EXTRA_NAME).orEmpty()
         val muscleGroup = intent.getStringExtra(EXTRA_MUSCLE_GROUP).orEmpty()
         val bodyPart = intent.getStringExtra(EXTRA_BODY_PART).orEmpty()
@@ -56,7 +73,39 @@ class ExerciseDetailActivity : AppCompatActivity() {
             vm.loadDetail(exerciseId)
         }
 
-        b.btnBack.setOnClickListener { finish() }
+        if (targetRoutineId > 0) {
+            b.btnAddToRoutine.text = "Anadir a la rutina"
+        } else {
+            b.btnAddToRoutine.text = "Anadir a una rutina"
+        }
+
+        b.btnAddToRoutine.setOnClickListener {
+            if (exerciseId.isBlank()) {
+                Toast.makeText(this, "Ejercicio invalido", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (targetRoutineId > 0) {
+                vm.addExerciseToRoutine(targetRoutineId, exerciseId)
+            } else {
+                openRoutinePicker()
+            }
+        }
+
+        vm.message.observe(this) { msg ->
+            if (!msg.isNullOrBlank()) {
+                if (msg.startsWith("Ejercicio anadido")) {
+                    showAddedFeedback(msg)
+                    b.btnAddToRoutine.postDelayed({
+                        finish()
+                        overridePendingTransition(0, 0)
+                    }, 550)
+                } else {
+                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                }
+                vm.clearMessage()
+            }
+        }
+
     }
 
     private fun valueOrFallback(label: String, value: String): String {
@@ -114,8 +163,20 @@ class ExerciseDetailActivity : AppCompatActivity() {
         return ""
     }
 
+    private fun openRoutinePicker() {
+        routinePickerLauncher.launch(Intent(this, RoutinePickerActivity::class.java))
+    }
+
+    private fun showAddedFeedback(message: String) {
+        b.btnAddToRoutine.isEnabled = false
+        b.btnAddToRoutine.text = "Anadido"
+        b.btnAddToRoutine.setIconResource(android.R.drawable.checkbox_on_background)
+        Snackbar.make(b.root, message, Snackbar.LENGTH_SHORT).show()
+    }
+
     companion object {
         const val EXTRA_ID = "extra_id"
+        const val EXTRA_TARGET_ROUTINE_ID = "extra_target_routine_id"
         const val EXTRA_NAME = "extra_name"
         const val EXTRA_MUSCLE_GROUP = "extra_muscle_group"
         const val EXTRA_BODY_PART = "extra_body_part"

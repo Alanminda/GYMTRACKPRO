@@ -10,6 +10,9 @@ interface RoutineDao {
     @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 ORDER BY updatedAt DESC")
     fun observeActiveByUser(userId: Int): Flow<List<RoutineEntity>>
 
+    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 ORDER BY updatedAt DESC")
+    suspend fun getActiveByUser(userId: Int): List<RoutineEntity>
+
     @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): RoutineEntity?
 
@@ -33,4 +36,7 @@ interface RoutineDao {
 
     @Query("UPDATE routines SET syncState = 'PENDING_DELETE', deleted = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun markPendingDelete(id: Int, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE routines SET syncState = 'PENDING_UPSERT', deleted = 0, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun markPendingUpsert(id: Int, updatedAt: Long = System.currentTimeMillis())
 }

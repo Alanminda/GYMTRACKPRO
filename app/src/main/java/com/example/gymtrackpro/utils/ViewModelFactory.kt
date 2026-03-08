@@ -8,6 +8,7 @@ import com.example.gymtrackpro.ui.exercises.ExerciseDetailViewModel
 import com.example.gymtrackpro.ui.exercises.ExercisesViewModel
 import com.example.gymtrackpro.ui.home.HomeViewModel
 import com.example.gymtrackpro.ui.routines.RoutineDetailViewModel
+import com.example.gymtrackpro.ui.routines.RoutinePickerViewModel
 
 class ViewModelFactory(private val repo: GymRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -17,6 +18,7 @@ class ViewModelFactory(private val repo: GymRepository) : ViewModelProvider.Fact
             modelClass.isAssignableFrom(ExercisesViewModel::class.java) -> ExercisesViewModel(repo) as T
             modelClass.isAssignableFrom(ExerciseDetailViewModel::class.java) -> ExerciseDetailViewModel(repo) as T
             modelClass.isAssignableFrom(RoutineDetailViewModel::class.java) -> RoutineDetailViewModel(repo) as T
+            modelClass.isAssignableFrom(RoutinePickerViewModel::class.java) -> RoutinePickerViewModel(repo) as T
             else -> throw IllegalArgumentException("ViewModel no soportado")
         }
     }
