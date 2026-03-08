@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gymtrackpro.R
@@ -55,6 +56,7 @@ class ThirdHubActivity : AppCompatActivity() {
         b.rvCommunity.layoutManager = LinearLayoutManager(this)
         b.rvCommunity.setHasFixedSize(true)
         b.rvCommunity.adapter = adapter
+        setupFilters()
 
         val lm = b.rvCommunity.layoutManager as LinearLayoutManager
         b.rvCommunity.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -87,6 +89,20 @@ class ThirdHubActivity : AppCompatActivity() {
         }
 
         vm.loadInitial()
+    }
+
+    private fun setupFilters() {
+        val labels = listOf("Recientes", "Mas votadas", "Duracion corta", "Duracion larga")
+        val sorts = listOf("recent", "top", "duration_asc", "duration_desc")
+        val adapterSort = android.widget.ArrayAdapter(this, android.R.layout.simple_list_item_1, labels)
+        b.dropSortCommunity.setAdapter(adapterSort)
+        b.dropSortCommunity.setText(labels.first(), false)
+        b.dropSortCommunity.setOnItemClickListener { _, _, position, _ ->
+            vm.onSortChanged(sorts.getOrElse(position) { "recent" })
+        }
+        b.etSearchCommunity.addTextChangedListener {
+            vm.onQueryChanged(it?.toString().orEmpty())
+        }
     }
 
     override fun onResume() {
