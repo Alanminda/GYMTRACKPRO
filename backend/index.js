@@ -130,6 +130,17 @@ async function fetchExerciseDetailFromRapidApi(id) {
   return null;
 }
 
+async function resolveExerciseMediaUrl(id) {
+  await refillCacheIfExpired();
+  const cached = exerciseCache.items.find((e) => e.id === id) || null;
+  const cachedUrl = normalizeGifUrl(cached?.gifUrl, id);
+  if (cachedUrl) return cachedUrl;
+
+  const detail = await fetchExerciseDetailFromRapidApi(id);
+  if (!detail) return null;
+  return normalizeGifUrl(detail.gifUrl, id);
+}
+
 function isCacheFresh() {
   const ttlMs = Number(EXERCISE_CACHE_TTL_MINUTES) * 60 * 1000;
   return exerciseCache.items.length > 0 && Date.now() - exerciseCache.updatedAt < ttlMs;
@@ -362,6 +373,28 @@ app.get("/exercises/:id", auth, async (req, res) => {
     return res.json(cached);
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener detalle de ejercicio", detail: error.message });
+  }
+});
+
+app.get("/exercises/:id/media", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "Id requerido" });
+
+    const mediaUrl = await resolveExerciseMediaUrl(id);
+    if (!mediaUrl) return res.status(404).json({ message: "Media no disponible" });
+
+    const response = await fetch(mediaUrl);
+    if (!response.ok) {
+      return res.status(404).json({ message: "No se pudo descargar media" });
+    }
+
+    const contentType = response.headers.get("content-type") || "image/gif";
+    const bytes = Buffer.from(await response.arrayBuffer());
+    res.set("Content-Type", contentType);
+    return res.status(200).send(bytes);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener media", detail: error.message });
   }
 });
 

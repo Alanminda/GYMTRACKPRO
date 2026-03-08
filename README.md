@@ -21,6 +21,56 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-07 22:xx - Media Proxy Endpoint for DNS Issues - `fix`
+
+- Resumen: se agrega endpoint proxy de media para ejercicios y la app lo usa en detalle, evitando fallos por DNS del CDN externo en dispositivo local.
+- Archivos modificados:
+  - `backend/index.js` -> nuevo `GET /exercises/:id/media` (publico) que descarga y retransmite imagen/GIF desde el proveedor externo.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiClient.kt` -> `BASE_URL` expuesto para construir URL proxy en UI.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> carga de media prioriza proxy `${BASE_URL}exercises/{id}/media`.
+- Motivo:
+  - En algunos entornos la URL CDN directa no resuelve (`cloudfront`), causando icono de error.
+- Impacto:
+  - Mayor confiabilidad de imagen/GIF en detalle de ejercicio.
+  - Se reduce dependencia de DNS del dispositivo final.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion funcional pendiente tras redeploy y prueba en dispositivo.
+
+---
+
+### 2026-03-07 21:xx - Glide Listener Compile Fix - `fix`
+
+- Resumen: se corrige error de compilacion en `ExerciseDetailActivity` por incompatibilidad de firmas en `RequestListener` de Glide.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> se elimina listener custom y se mantiene estrategia visual con `placeholder` + `error`.
+- Motivo:
+  - Android Studio mostraba: `onLoadFailed overrides nothing` / `onResourceReady overrides nothing`.
+- Impacto:
+  - Build vuelve a compilar.
+  - La vista de imagen mantiene fallback visual sin bloque en blanco.
+- Verificacion:
+  - Revision de imports y llamadas Glide completada.
+  - Compilacion local final pendiente en entorno Android Studio.
+
+---
+
+### 2026-03-07 21:xx - Exercise Detail Image Blank Fix - `fix`
+
+- Resumen: se corrige espacio en blanco en detalle de ejercicio cuando la carga de GIF/imagen falla (caso visible en modo oscuro).
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> Glide ahora usa `placeholder`, `error` y `RequestListener`; si falla la carga se oculta `ImageView` para evitar bloque vacio.
+- Motivo:
+  - En algunos ejercicios la URL de media falla o tarda, dejando un area vacia que parecia bug visual.
+- Impacto:
+  - Mejor UX en detalle: sin hueco blanco al fallar media.
+  - Comportamiento mas consistente en tema claro/oscuro.
+- Verificacion:
+  - Revision de flujo de render y fallback visual completada.
+  - Validacion final en dispositivo pendiente.
+
+---
+
 ### 2026-03-07 20:xx - GIF URL Fallback by Exercise ID - `fix`
 
 - Resumen: cuando ExerciseDB no devuelve `gifUrl`, el backend ahora construye una URL fallback por `id` para mantener vista de GIF en la app.

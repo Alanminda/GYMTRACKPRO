@@ -6,6 +6,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.example.gymtrackpro.data.local.entities.ExerciseEntity
+import com.example.gymtrackpro.data.remote.api.ApiClient
 import com.example.gymtrackpro.databinding.ActivityExerciseDetailBinding
 import com.example.gymtrackpro.utils.AppProvider
 import com.example.gymtrackpro.utils.ViewModelFactory
@@ -70,7 +71,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
         b.tvSecondaryMuscles.text = valueOrFallback("Musculos secundarios", exercise.secondaryMuscles.orEmpty())
         b.tvInstructions.text = valueOrFallback("Instrucciones", exercise.instructions.orEmpty())
 
-        val media = normalizeMediaUrl(exercise.gifUrl.orEmpty())
+        val media = resolveBestMediaUrl(exercise)
         if (media.isBlank()) {
             b.ivExercise.visibility = View.GONE
         } else {
@@ -78,6 +79,8 @@ class ExerciseDetailActivity : AppCompatActivity() {
             Glide.with(this)
                 .load(media)
                 .thumbnail(0.25f)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_report_image)
                 .into(b.ivExercise)
         }
     }
@@ -89,6 +92,14 @@ class ExerciseDetailActivity : AppCompatActivity() {
         } else {
             url
         }
+    }
+
+    private fun resolveBestMediaUrl(exercise: ExerciseEntity): String {
+        val id = exercise.id.trim()
+        if (id.isNotBlank()) {
+            return "${ApiClient.BASE_URL}exercises/$id/media"
+        }
+        return normalizeMediaUrl(exercise.gifUrl.orEmpty())
     }
 
     companion object {
