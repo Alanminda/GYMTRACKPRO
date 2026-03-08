@@ -34,6 +34,10 @@
         <activity
             android:name=".ui.exercises.ExerciseDetailActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.routines.RoutineDetailActivity"
+            android:exported="false" />
             
         <activity
             android:name=".MainActivity"

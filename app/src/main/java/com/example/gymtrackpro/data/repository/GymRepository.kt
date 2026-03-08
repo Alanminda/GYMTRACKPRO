@@ -122,6 +122,12 @@ class GymRepository(
 
     fun observeRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeActiveByUser(userId)
 
+    suspend fun getRoutineExercises(routineId: Int): List<ExerciseEntity> {
+        val exerciseIds = routineExerciseDao.getActiveExerciseIds(routineId)
+        if (exerciseIds.isEmpty()) return emptyList()
+        return exerciseDao.getByIds(exerciseIds)
+    }
+
     suspend fun createRoutine(name: String, userId: Int = 1): Int {
         val routine = RoutineEntity(name = name, userId = userId)
         return routineDao.insert(routine).toInt()

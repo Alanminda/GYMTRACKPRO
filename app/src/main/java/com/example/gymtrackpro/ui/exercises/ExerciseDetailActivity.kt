@@ -5,6 +5,7 @@ import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestBuilder
 import com.example.gymtrackpro.data.local.entities.ExerciseEntity
 import com.example.gymtrackpro.data.remote.api.ApiClient
 import com.example.gymtrackpro.databinding.ActivityExerciseDetailBinding
@@ -71,17 +72,28 @@ class ExerciseDetailActivity : AppCompatActivity() {
         b.tvSecondaryMuscles.text = valueOrFallback("Musculos secundarios", exercise.secondaryMuscles.orEmpty())
         b.tvInstructions.text = valueOrFallback("Instrucciones", exercise.instructions.orEmpty())
 
-        val media = resolveBestMediaUrl(exercise)
-        if (media.isBlank()) {
+        val proxyUrl = resolveProxyMediaUrl(exercise)
+        val directUrl = normalizeMediaUrl(exercise.gifUrl.orEmpty())
+        val primaryUrl = if (proxyUrl.isNotBlank()) proxyUrl else directUrl
+
+        if (primaryUrl.isBlank()) {
             b.ivExercise.visibility = View.GONE
         } else {
             b.ivExercise.visibility = View.VISIBLE
-            Glide.with(this)
-                .load(media)
+            var req: RequestBuilder<android.graphics.drawable.Drawable> = Glide.with(this)
+                .load(primaryUrl)
                 .thumbnail(0.25f)
                 .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_report_image)
-                .into(b.ivExercise)
+
+            if (directUrl.isNotBlank() && directUrl != primaryUrl) {
+                req = req.error(
+                    Glide.with(this)
+                        .load(directUrl)
+                        .thumbnail(0.25f)
+                )
+            }
+
+            req.into(b.ivExercise)
         }
     }
 
@@ -94,12 +106,12 @@ class ExerciseDetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun resolveBestMediaUrl(exercise: ExerciseEntity): String {
+    private fun resolveProxyMediaUrl(exercise: ExerciseEntity): String {
         val id = exercise.id.trim()
         if (id.isNotBlank()) {
             return "${ApiClient.BASE_URL}exercises/$id/media"
         }
-        return normalizeMediaUrl(exercise.gifUrl.orEmpty())
+        return ""
     }
 
     companion object {
