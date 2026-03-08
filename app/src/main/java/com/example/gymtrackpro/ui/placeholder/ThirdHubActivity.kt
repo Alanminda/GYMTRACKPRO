@@ -28,6 +28,7 @@ class ThirdHubActivity : AppCompatActivity() {
             startActivity(Intent(this, CommunityRoutineDetailActivity::class.java).apply {
                 putExtra(CommunityRoutineDetailActivity.EXTRA_NAME, item.name)
                 putExtra(CommunityRoutineDetailActivity.EXTRA_OWNER_NAME, item.ownerName)
+                putExtra(CommunityRoutineDetailActivity.EXTRA_DURATION_MINUTES, item.durationMinutes ?: -1)
                 putStringArrayListExtra(
                     CommunityRoutineDetailActivity.EXTRA_EXERCISE_IDS,
                     ArrayList(item.exerciseIds)

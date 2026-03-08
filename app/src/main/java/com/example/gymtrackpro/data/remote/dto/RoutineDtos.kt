@@ -20,6 +20,7 @@ data class CommunityRoutineDto(
     val ownerName: String,
     val exerciseIds: List<String> = emptyList(),
     val exerciseCount: Int = 0,
+    val durationMinutes: Int? = null,
     val favoritesCount: Int = 0,
     val isFavorite: Boolean = false
 )

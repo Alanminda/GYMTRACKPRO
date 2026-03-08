@@ -120,7 +120,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
         }
     }
 
-    fun shareRoutine(routineId: Int) {
+    fun shareRoutine(routineId: Int, routineName: String) {
         viewModelScope.launch {
             _loading.value = true
             try {
@@ -130,7 +130,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
                 }
                 repo.syncForLoggedUser()
                 repo.shareRoutine(routineId)
-                _routineMessage.value = "Rutina compartida publicamente"
+                _routineMessage.value = "Rutina compartida: $routineName"
             } catch (_: Exception) {
                 _routineMessage.value = "No se pudo compartir la rutina"
             } finally {
