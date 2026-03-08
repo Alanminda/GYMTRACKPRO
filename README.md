@@ -1,4 +1,4 @@
-# GYMTRACKPRO - Registro de Cambios
+﻿# GYMTRACKPRO - Registro de Cambios
 
 Este archivo lleva un registro exacto de cambios en el proyecto.
 
@@ -20,6 +20,7 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 ---
 
 ## Historial
+
 
 ### 2026-03-07 13:xx - Backend Pagination Integrity - `fix`
 
