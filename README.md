@@ -1,4 +1,4 @@
-﻿# GYMTRACKPRO - Registro de Cambios
+# GYMTRACKPRO - Registro de Cambios
 
 Este archivo lleva un registro exacto de cambios en el proyecto.
 
@@ -20,6 +20,41 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 ---
 
 ## Historial
+
+### 2026-03-07 15:xx - Infinite Scroll Provider Fallback - `fix`
+
+- Resumen: se ajusta infinite scroll para escenarios donde la API externa devuelve lotes fijos o ignora parcialmente `offset`.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> fin de paginacion solo cuando pagina llega vacia (`page.isEmpty()`), y `PAGE_SIZE=50` para estabilidad.
+  - `backend/index.js` -> fallback de carga grande unica (`EXERCISE_FULL_FETCH_LIMIT`) cuando una expansion no agrega nuevos items (`noGrowth`).
+  - `backend/.env.example` -> se agrega `EXERCISE_FULL_FETCH_LIMIT=2000`.
+- Motivo:
+  - Se seguian mostrando pocos ejercicios porque el proveedor podia no avanzar como se esperaba por offset.
+- Impacto:
+  - Scroll infinito sigue cargando mas datos de forma robusta incluso con comportamiento irregular del proveedor.
+- Verificacion:
+  - Sintaxis valida con `node --check backend/index.js`.
+  - Validacion funcional pendiente tras reinicio/deploy del backend.
+
+---
+
+### 2026-03-07 14:xx - Infinite Scroll Cutoff Fix - `fix`
+
+- Resumen: se corrige corte prematuro del catalogo de ejercicios en backend cuando la API externa devuelve lotes menores al `limit` solicitado.
+- Archivos modificados:
+  - `backend/index.js` -> no se marca fin de fuente por `page.length < limit`; ahora solo se agota cuando no llegan datos o cuando una pagina no agrega nuevos items (noGrowth).
+  - `backend/index.js` -> `EXTERNAL_PAGE_SIZE` pasa a variable configurable (`EXERCISE_FETCH_PAGE_SIZE`, default `50`) para mejorar compatibilidad con limites reales del proveedor.
+  - `backend/.env.example` -> se agrega `EXERCISE_FETCH_PAGE_SIZE=50`.
+- Motivo:
+  - El backend podia detener la expansion de cache demasiado pronto y el scroll se quedaba en un subconjunto (ejercicios iniciales).
+- Impacto:
+  - Infinite scroll puede seguir trayendo mas paginas de forma estable.
+  - Mejor tolerancia a comportamiento real de paginacion de ExerciseDB/RapidAPI.
+- Verificacion:
+  - Sintaxis valida con `node --check backend/index.js`.
+  - Prueba funcional en app pendiente tras redeploy/restart backend.
+
+---
 
 
 ### 2026-03-07 13:xx - Backend Pagination Integrity - `fix`
