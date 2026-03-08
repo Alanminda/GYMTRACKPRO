@@ -27,7 +27,11 @@ class CommunityRoutineAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
-        val exerciseCount = if (item.exerciseCount > 0) item.exerciseCount else item.exerciseIds.distinct().size
+        val exerciseCount = if (item.exerciseCount > 0) {
+            item.exerciseCount
+        } else {
+            item.exerciseIds.map { it.trim() }.filter { it.isNotEmpty() }.distinct().size
+        }
         holder.b.tvName.text = item.name
         holder.b.tvOwner.text = "Creador: ${item.ownerName}"
         holder.b.tvExercises.text = "Ejercicios: $exerciseCount"

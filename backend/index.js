@@ -264,6 +264,10 @@ function filterExercises(list, q) {
   });
 }
 
+function normalizeExerciseIds(ids) {
+  return [...new Set((ids || []).map((e) => String(e || "").trim()).filter(Boolean))];
+}
+
 app.post("/auth/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -578,7 +582,7 @@ app.post("/routines/:id/share", auth, async (req, res) => {
       .maybeSingle();
     if (userError) return res.status(500).json({ message: "Error al compartir rutina" });
 
-    const normalizedExerciseIds = [...new Set((routine.exercise_ids || []).map((e) => String(e).trim()).filter(Boolean))];
+    const normalizedExerciseIds = normalizeExerciseIds(routine.exercise_ids);
 
     const payload = {
       routine_id: routine.id,
@@ -621,8 +625,8 @@ app.post("/routines/:id/share", auth, async (req, res) => {
       id: shared.id,
       name: shared.name,
       ownerName: shared.owner_name || "Usuario",
-      exerciseIds: [...new Set(shared.exercise_ids || [])],
-      exerciseCount: [...new Set(shared.exercise_ids || [])].length,
+      exerciseIds: normalizeExerciseIds(shared.exercise_ids),
+      exerciseCount: normalizeExerciseIds(shared.exercise_ids).length,
       isFavorite: false,
       favoritesCount: 0,
     });
@@ -667,16 +671,21 @@ app.get("/community/routines", auth, async (req, res) => {
       favoritesByRoutineId = countMap;
     }
 
-    return res.json(
-      (routines || []).map((r) => ({
+    const normalizeRow = (r) => {
+      const normalizedIds = normalizeExerciseIds(r.exercise_ids);
+      return {
         id: r.id,
         name: r.name,
         ownerName: r.owner_name || "Usuario",
-        exerciseIds: [...new Set(r.exercise_ids || [])],
-        exerciseCount: [...new Set(r.exercise_ids || [])].length,
+        exerciseIds: normalizedIds,
+        exerciseCount: normalizedIds.length,
         favoritesCount: favoritesByRoutineId.get(r.id) || 0,
         isFavorite: favoriteIdsByUser.has(r.id),
-      }))
+      };
+    };
+
+    return res.json(
+      (routines || []).map(normalizeRow)
     );
   } catch {
     return res.status(500).json({ message: "Error al obtener comunidad" });
@@ -773,15 +782,18 @@ app.get("/community/favorites", auth, async (req, res) => {
     }
 
     return res.json(
-      (routines || []).map((r) => ({
-        id: r.id,
-        name: r.name,
-        ownerName: r.owner_name || "Usuario",
-        exerciseIds: [...new Set(r.exercise_ids || [])],
-        exerciseCount: [...new Set(r.exercise_ids || [])].length,
-        favoritesCount: countMap.get(r.id) || 0,
-        isFavorite: true,
-      }))
+      (routines || []).map((r) => {
+        const normalizedIds = normalizeExerciseIds(r.exercise_ids);
+        return {
+          id: r.id,
+          name: r.name,
+          ownerName: r.owner_name || "Usuario",
+          exerciseIds: normalizedIds,
+          exerciseCount: normalizedIds.length,
+          favoritesCount: countMap.get(r.id) || 0,
+          isFavorite: true,
+        };
+      })
     );
   } catch {
     return res.status(500).json({ message: "Error al obtener favoritos" });
