@@ -20,16 +20,24 @@ class RoutinePickerActivity : AppCompatActivity() {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
 
-    private val adapter = RoutineAdapter { routine ->
-        setResult(
-            Activity.RESULT_OK,
-            Intent().apply {
-                putExtra(EXTRA_SELECTED_ROUTINE_ID, routine.id)
-                putExtra(EXTRA_SELECTED_ROUTINE_NAME, routine.name)
-            }
-        )
-        finish()
-    }
+    private val adapter = RoutineAdapter(
+        onClick = { routine ->
+            setResult(
+                Activity.RESULT_OK,
+                Intent().apply {
+                    putExtra(EXTRA_SELECTED_ROUTINE_ID, routine.id)
+                    putExtra(EXTRA_SELECTED_ROUTINE_NAME, routine.name)
+                }
+            )
+            finish()
+        },
+        onDelete = { _ ->
+            // En esta pantalla solo se selecciona una rutina.
+        },
+        onShare = { _ ->
+            // En esta pantalla solo se selecciona una rutina.
+        }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

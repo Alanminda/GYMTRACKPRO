@@ -21,6 +21,121 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 19:xx - Swipe Flicker Reduction - `fix`
+
+- Resumen: se elimina parpadeo visual al abrir/cerrar acciones swipe en rutinas.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> uso de payloads de RecyclerView para actualizar solo estado de apertura/cierre sin rebind completo.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> deshabilita `supportsChangeAnimations` en `DefaultItemAnimator`.
+- Motivo:
+  - El cambio de estado del item ejecutaba animacion de `change` y parecia una recarga/parpadeo.
+- Impacto:
+  - Apertura/cierre de botones swipe mas estable y suave.
+- Verificacion:
+  - Revision del flujo `notifyItemChanged` y animaciones de RecyclerView completada.
+  - Prueba visual final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 19:xx - Swipe Width Alignment Fix - `fix`
+
+- Resumen: se corrige solape visual de botones swipe en Home reduciendo su tamaño y alineando el ancho de reveal con el ancho real de acciones.
+- Archivos modificados:
+  - `app/src/main/res/layout/item_routine.xml` -> botones laterales reducidos a `84dp` por accion e iconos a `24dp`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> `revealWidthPx` ajustado a `168dp` para coincidir con el total de acciones.
+- Motivo:
+  - El ancho de swipe no coincidia con el nuevo diseño de acciones y provocaba solape del boton `Compartir` sobre la tarjeta de rutina.
+- Impacto:
+  - Swipe limpio sin superposicion.
+  - Acciones laterales mas compactas y proporcionadas en movil.
+- Verificacion:
+  - Revision de coherencia entre ancho visual y desplazamiento horizontal completada.
+  - Validacion final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 19:xx - Swipe Actions Material 3 Visual Polish - `feat`
+
+- Resumen: se mejora visual de acciones swipe en rutinas con estilo Material 3 y iconos más grandes.
+- Archivos modificados:
+  - `app/src/main/res/layout/item_routine.xml` -> botones laterales de `Compartir/Eliminar` con mayor ancho, iconos `30dp`, colores del tema (`colorPrimary`/`colorError`) y mejor area tactil.
+- Motivo:
+  - Los botones e iconos se veian pequenos y poco claros en telefono.
+- Impacto:
+  - Mejor legibilidad, mejor tap target y consistencia visual con Material Design 3.
+- Verificacion:
+  - Revision de atributos visuales y tokens de color del tema completada.
+  - Validacion visual final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 19:xx - Swipe Actions Icons Only - `refactor`
+
+- Resumen: en acciones de swipe de rutinas se quita texto y se dejan solo iconos para `Compartir` y `Eliminar`.
+- Archivos modificados:
+  - `app/src/main/res/layout/item_routine.xml` -> botones de acciones laterales con solo icono y `contentDescription` para accesibilidad.
+- Motivo:
+  - Simplificar visualmente el gesto lateral manteniendo significado claro para usuario movil.
+- Impacto:
+  - UI mas limpia en estado swipe.
+  - Acciones siguen siendo identificables por iconografia.
+- Verificacion:
+  - Revision de atributos de botones y accesibilidad completada.
+  - Validacion visual final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 19:xx - Swipe Action Buttons Visual Upgrade - `feat`
+
+- Resumen: se mejora la apariencia de los botones de swipe en rutinas con iconos identificables para `Compartir` y `Eliminar`.
+- Archivos modificados:
+  - `app/src/main/res/layout/item_routine.xml` -> se agregan iconos (`share`/`delete`), ajuste de mayusculas, centrado y espaciado visual en ambos botones.
+- Motivo:
+  - Hacer mas clara la accion de cada boton al primer vistazo en movil.
+- Impacto:
+  - Mejor legibilidad y reconocimiento rapido de acciones en el gesto lateral.
+- Verificacion:
+  - Revision de layout y atributos MaterialButton completada.
+  - Validacion visual final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 19:xx - RoutinePicker Adapter Signature Fix - `fix`
+
+- Resumen: se corrige error de compilacion Kotlin en `RoutinePickerActivity` tras cambio de firma en `RoutineAdapter`.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutinePickerActivity.kt` -> adapter actualizado con `onClick`, `onDelete` y `onShare`; en picker `onDelete/onShare` quedan como no-op.
+- Motivo:
+  - `RoutineAdapter` ahora requiere tres callbacks y `RoutinePickerActivity` seguia usando la firma antigua.
+- Impacto:
+  - Se elimina el fallo `No value passed for parameter 'onClick'/'onDelete'`.
+  - El picker mantiene su comportamiento: solo seleccionar rutina.
+- Verificacion:
+  - Busqueda de instancias de `RoutineAdapter(...)` completada para confirmar compatibilidad.
+  - Build final en Android Studio pendiente.
+
+---
+
+### 2026-03-08 19:xx - Swipe Actions in Home Routines - `feat`
+
+- Resumen: en Home, al arrastrar una rutina hacia la izquierda se muestran dos acciones: `Eliminar` y `Compartir` (placeholder).
+- Archivos modificados:
+  - `app/src/main/res/layout/item_routine.xml` -> nuevo item con capa de acciones lateral y tarjeta frontal deslizante.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> soporte de estado "abierto/cerrado", callbacks de `Eliminar`/`Compartir` y reveal width para swipe.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `ItemTouchHelper` para gesto izquierda/derecha, confirmacion de borrado y placeholder de compartir.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> nueva accion `deleteRoutine(routineId)` con sync para usuario logueado.
+- Motivo:
+  - Agregar acciones contextuales por gesto sin saturar la tarjeta con botones visibles permanentes.
+- Impacto:
+  - Swipe izquierda revela botones `Compartir` y `Eliminar`.
+  - `Eliminar` ya funciona con confirmacion y sincronizacion.
+  - `Compartir` queda listo para implementar su logica en el siguiente paso.
+- Verificacion:
+  - Revision de flujo UI (gesture -> adapter -> callback -> ViewModel) completada.
+  - Build/validacion funcional en dispositivo pendiente.
+
+---
+
 ### 2026-03-08 19:xx - Remove Redundant Back Buttons on Mobile - `fix`
 
 - Resumen: se eliminan botones visuales de volver en pantallas internas para usar navegacion nativa del telefono (gesto/boton del sistema).

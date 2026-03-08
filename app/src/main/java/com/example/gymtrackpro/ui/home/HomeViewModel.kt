@@ -74,4 +74,31 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
     fun clearRoutineMessage() {
         _routineMessage.value = null
     }
+
+    fun deleteRoutine(routineId: Int) {
+        viewModelScope.launch {
+            _loading.value = true
+            try {
+                repo.deleteRoutine(routineId)
+                if (repo.isLoggedIn()) {
+                    try {
+                        repo.syncForLoggedUser()
+                        _routineMessage.value = if (repo.hasPendingRoutineSync()) {
+                            "Rutina eliminada local; sync pendiente"
+                        } else {
+                            "Rutina eliminada"
+                        }
+                    } catch (_: Exception) {
+                        _routineMessage.value = "Rutina eliminada local; sync pendiente"
+                    }
+                } else {
+                    _routineMessage.value = "Rutina eliminada"
+                }
+            } catch (_: Exception) {
+                _routineMessage.value = "No se pudo eliminar la rutina"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
 }
