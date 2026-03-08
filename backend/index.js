@@ -708,14 +708,15 @@ app.get("/community/routines", auth, async (req, res) => {
   try {
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
-    const from = offset;
-    const to = offset + limit - 1;
+    const q = String(req.query.q || "").trim().toLowerCase();
+    const sort = String(req.query.sort || "recent").trim().toLowerCase();
+    const durationMin = Number(req.query.durationMin);
+    const durationMax = Number(req.query.durationMax);
 
     const { data: routines, error } = await supabase
       .from("public_routines")
       .select("id,name,owner_name,exercise_ids,updated_at")
-      .order("updated_at", { ascending: false })
-      .range(from, to);
+      .order("updated_at", { ascending: false });
     if (error) return res.status(500).json({ message: "Error al obtener comunidad" });
 
     const ids = (routines || []).map((r) => r.id);
@@ -749,14 +750,48 @@ app.get("/community/routines", auth, async (req, res) => {
         exerciseIds: normalizedIds,
         exerciseCount: normalizedIds.length,
         durationMinutes: parseDurationMinutesFromName(r.name),
+        updatedAt: r.updated_at || null,
         favoritesCount: favoritesByRoutineId.get(r.id) || 0,
         isFavorite: favoriteIdsByUser.has(r.id),
       };
     };
 
-    return res.json(
-      (routines || []).map(normalizeRow)
-    );
+    let rows = (routines || []).map(normalizeRow);
+
+    if (q) {
+      rows = rows.filter((r) => String(r.name || "").toLowerCase().includes(q));
+    }
+    if (Number.isFinite(durationMin)) {
+      rows = rows.filter((r) => r.durationMinutes != null && r.durationMinutes >= durationMin);
+    }
+    if (Number.isFinite(durationMax)) {
+      rows = rows.filter((r) => r.durationMinutes != null && r.durationMinutes <= durationMax);
+    }
+
+    if (sort === "top") {
+      rows.sort((a, b) => {
+        if (b.favoritesCount !== a.favoritesCount) return b.favoritesCount - a.favoritesCount;
+        return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      });
+    } else if (sort === "duration_asc") {
+      rows.sort((a, b) => {
+        const av = a.durationMinutes ?? Number.MAX_SAFE_INTEGER;
+        const bv = b.durationMinutes ?? Number.MAX_SAFE_INTEGER;
+        if (av !== bv) return av - bv;
+        return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      });
+    } else if (sort === "duration_desc") {
+      rows.sort((a, b) => {
+        const av = a.durationMinutes ?? -1;
+        const bv = b.durationMinutes ?? -1;
+        if (bv !== av) return bv - av;
+        return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      });
+    } else {
+      rows.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+    }
+
+    return res.json(rows.slice(offset, offset + limit));
   } catch {
     return res.status(500).json({ message: "Error al obtener comunidad" });
   }

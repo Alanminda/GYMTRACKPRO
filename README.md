@@ -21,6 +21,31 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 21:xx - Community Star UX + Search & Sort Filters - `feat`
+
+- Resumen: en comunidad se fortalece UX de estrella (hueca/llena con aviso) y se agregan buscador por titulo + filtros de orden.
+- Archivos modificados:
+  - `backend/index.js` -> `GET /community/routines` ahora soporta:
+    - `q` (busqueda por titulo)
+    - `sort=recent|top|duration_asc|duration_desc`
+    - orden por fecha actual, mas votadas y duracion.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt` -> `getCommunityRoutines` recibe `q` y `sort`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> paginacion de comunidad ahora usa query/sort.
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityViewModel.kt` -> debounce con corrutina para buscador, cambio de orden con reset de paginacion y mensaje claro al favorito.
+  - `app/src/main/res/layout/activity_third_hub.xml` -> campo buscador + dropdown de orden.
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt` -> binding de buscador y filtro (`Recientes`, `Mas votadas`, `Duracion corta`, `Duracion larga`).
+- Motivo:
+  - Mejorar descubrimiento en comunidad y asegurar feedback claro al marcar favoritos.
+- Impacto:
+  - Estrella sigue hueca por defecto y se llena al marcar favorito.
+  - Se muestra aviso de accion al agregar/quitar favorito.
+  - Comunidad se puede filtrar por titulo y ordenar por votos, duracion o fecha.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion funcional en app pendiente tras redeploy.
+
+---
+
 ### 2026-03-08 20:xx - Share Confirmation + Routine Duration in Community/Favorites - `feat`
 
 - Resumen: se mejora feedback al compartir rutina y se muestra tiempo de rutina en tarjetas de Comunidad y Favoritas.

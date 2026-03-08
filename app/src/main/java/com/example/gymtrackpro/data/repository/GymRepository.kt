@@ -363,12 +363,19 @@ class GymRepository(
         )
     }
 
-    suspend fun fetchCommunityRoutinesPage(limit: Int, offset: Int): List<CommunityRoutineDto> {
+    suspend fun fetchCommunityRoutinesPage(
+        limit: Int,
+        offset: Int,
+        query: String?,
+        sort: String
+    ): List<CommunityRoutineDto> {
         val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
         return api.getCommunityRoutines(
             bearer = "Bearer ${session.token}",
             limit = limit,
-            offset = offset
+            offset = offset,
+            q = query?.takeIf { it.isNotBlank() },
+            sort = sort
         )
     }
 

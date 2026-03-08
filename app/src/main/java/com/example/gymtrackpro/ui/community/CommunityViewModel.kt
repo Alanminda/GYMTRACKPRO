@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gymtrackpro.data.remote.dto.CommunityRoutineDto
 import com.example.gymtrackpro.data.repository.GymRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
@@ -25,12 +28,33 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
     private var loadingPage: Boolean = false
     private var endReached: Boolean = false
     private var offset: Int = 0
+    private var query: String = ""
+    private var sort: String = "recent"
+    private var searchJob: Job? = null
+    private var generation: Int = 0
 
     fun loadInitial() {
+        generation += 1
         offset = 0
         endReached = false
         _items.value = emptyList()
         loadNextPage()
+    }
+
+    fun onQueryChanged(text: String) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(300)
+            query = text.trim()
+            loadInitial()
+        }
+    }
+
+    fun onSortChanged(value: String) {
+        val normalized = value.trim().lowercase()
+        if (normalized == sort) return
+        sort = normalized
+        loadInitial()
     }
 
     fun loadMoreIfNeeded(lastVisiblePosition: Int) {
@@ -42,18 +66,29 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
 
     private fun loadNextPage() {
         if (loadingPage || endReached) return
+        val currentGeneration = generation
         loadingPage = true
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
-                val page = repo.fetchCommunityRoutinesPage(limit = currentPageSize(), offset = offset)
+                val page = repo.fetchCommunityRoutinesPage(
+                    limit = currentPageSize(),
+                    offset = offset,
+                    query = query,
+                    sort = sort
+                )
+                if (currentGeneration != generation) return@launch
                 if (page.isEmpty()) endReached = true
                 _items.value = (_items.value.orEmpty() + page).distinctBy { it.id }
                 offset += page.size
+            } catch (_: CancellationException) {
+                // Cambios de busqueda/filtro cancelan carga anterior.
             } catch (_: Exception) {
+                if (currentGeneration != generation) return@launch
                 _error.value = "No se pudo cargar comunidad"
             } finally {
+                if (currentGeneration != generation) return@launch
                 loadingPage = false
                 _loading.value = false
             }
@@ -75,7 +110,7 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
                         it
                     }
                 }
-                _message.value = if (remote.isFavorite) "Agregada a favoritas" else "Quitada de favoritas"
+                _message.value = if (remote.isFavorite) "Anadida a favoritos" else "Quitada de favoritos"
             } catch (_: Exception) {
                 _message.value = "No se pudo actualizar favorito"
             }

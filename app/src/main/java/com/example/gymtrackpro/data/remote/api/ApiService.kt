@@ -74,7 +74,9 @@ interface ApiService {
     suspend fun getCommunityRoutines(
         @Header("Authorization") bearer: String,
         @Query("limit") limit: Int,
-        @Query("offset") offset: Int
+        @Query("offset") offset: Int,
+        @Query("q") q: String? = null,
+        @Query("sort") sort: String? = null
     ): List<CommunityRoutineDto>
 
     @POST("community/routines/{id}/favorite")
