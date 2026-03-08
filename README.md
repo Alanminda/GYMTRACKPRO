@@ -21,6 +21,86 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 20:xx - Community Count Accuracy + Realistic Seed x30 - `feat`
+
+- Resumen: se corrige consistencia de conteos en comunidad (ejercicios/favoritos) y se agrega seed realista de 30 ejemplos para pruebas.
+- Archivos modificados:
+  - `backend/index.js` -> comunidad ahora devuelve `exerciseIds` deduplicados + `exerciseCount`; endpoints de favorito devuelven conteo real actualizado (`favoritesCount`) y estado (`isFavorite`).
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/RoutineDtos.kt` -> nuevos campos `exerciseCount` y `CommunityFavoriteToggleDto`.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt` -> favorito/unfavorito ahora consumen respuesta con conteo real.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> `setCommunityRoutineFavorite(...)` retorna payload remoto para reflejar conteo exacto en UI.
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityViewModel.kt` -> aplica `favoritesCount` real desde backend al tocar estrella.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt` -> conteo de ejercicios usa `exerciseCount` (fallback deduplicado).
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityRoutineDetailActivity.kt` -> subtitulo muestra cantidad cargada real de ejercicios.
+  - `backend/supabase-seed-dev-real-30.sql` -> nuevo seed con datos mas reales (30 users/routines/progress/public_routines y favoritos distribuidos).
+  - `.gitignore` -> se ignora `backend/supabase-seed-dev-real-30.sql`.
+- Motivo:
+  - Habia diferencias visuales entre conteo mostrado y ejercicios realmente visibles; ademas se requeria dataset mas realista para QA.
+- Impacto:
+  - Conteos de favoritos y ejercicios son mas confiables en comunidad.
+  - Se dispone de datos de prueba de mejor calidad para validar UX/flujo social.
+- Verificacion:
+  - Validacion de sintaxis backend pendiente de redeploy.
+  - Ejecucion del nuevo seed en Supabase pendiente por usuario.
+
+---
+
+### 2026-03-08 20:xx - Community Routine Detail + Card UI Polish - `feat`
+
+- Resumen: al tocar una rutina en Comunidad ahora abre detalle con lista de ejercicios; ademas se mejora visual de tarjetas con metadata en lineas separadas.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityRoutineDetailActivity.kt` -> nueva pantalla para ver ejercicios de una rutina publica.
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityRoutineDetailViewModel.kt` -> carga de ejercicios por IDs con corrutina.
+  - `app/src/main/res/layout/activity_community_routine_detail.xml` -> layout Material 3 para detalle de rutina comunitaria.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `getExercisesByIds(...)` reutilizando resolucion local/remota de ejercicios faltantes.
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt` -> click en tarjeta navega al detalle en lugar de toast placeholder.
+  - `app/src/main/res/layout/item_community_routine.xml` -> metadata separada en lineas (`Creador`, `Ejercicios`, `Favoritos`) para mejor lectura.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt` -> binding actualizado a nuevo diseño de tarjeta.
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt` -> soporte para `CommunityRoutineDetailViewModel`.
+  - `app/src/main/AndroidManifest.xml` -> registro de `CommunityRoutineDetailActivity`.
+- Motivo:
+  - Completar UX de comunidad para inspeccionar contenido real de rutina y mejorar legibilidad visual de tarjetas.
+- Impacto:
+  - El feed comunitario ahora tiene navegación útil al detalle.
+  - La información de cada tarjeta se entiende mejor de un vistazo.
+- Verificacion:
+  - Revision de flujo `Comunidad -> Detalle -> Ejercicio` completada.
+  - Compilacion final en Android Studio pendiente.
+
+---
+
+### 2026-03-08 20:xx - Seed SQL bigint cast fix - `fix`
+
+- Resumen: se corrige error SQL en seed por uso de `row_number()` (`bigint`) en `make_interval` y operaciones de fecha.
+- Archivos modificados:
+  - `backend/supabase-seed-dev.sql` -> casteos explicitos `::int`/`::numeric` en intervalos y calculos derivados de `rn`.
+- Motivo:
+  - Supabase devolvia: `function make_interval(days => bigint) does not exist`.
+- Impacto:
+  - El seed ejecuta correctamente en SQL Editor.
+- Verificacion:
+  - Revision de tipos en todas las expresiones con `rn` completada.
+  - Re-ejecucion en Supabase pendiente por usuario.
+
+---
+
+### 2026-03-08 20:xx - Supabase Dev Seed for Community Tests - `chore`
+
+- Resumen: se agrega script de seed SQL para pruebas de comunidad con minimo 20 registros por tabla clave.
+- Archivos modificados:
+  - `backend/supabase-seed-dev.sql` -> genera datos de prueba idempotentes para `users`, `routines`, `progress`, `public_routines` y `public_routine_favorites`.
+  - `.gitignore` -> se ignora `backend/supabase-seed-dev.sql` para evitar versionar datos de prueba locales.
+- Motivo:
+  - Facilitar pruebas realistas del feed de comunidad, favoritos e integracion Home/Favoritas.
+- Impacto:
+  - Permite poblar rapido Supabase para QA manual del flujo.
+  - Evita subir seeds temporales de entorno al repo remoto.
+- Verificacion:
+  - Script revisado para re-ejecucion segura (`on conflict` / `where not exists`).
+  - Ejecucion en Supabase pendiente por usuario.
+
+---
+
 ### 2026-03-08 20:xx - Supabase Community Schema Hardening - `refactor`
 
 - Resumen: se normaliza el SQL de Supabase a esquema completo con relaciones fuertes (FK) entre tablas base y comunidad.

@@ -1,5 +1,6 @@
 package com.example.gymtrackpro.ui.placeholder
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -10,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gymtrackpro.R
 import com.example.gymtrackpro.databinding.ActivityThirdHubBinding
 import com.example.gymtrackpro.ui.adapters.CommunityRoutineAdapter
+import com.example.gymtrackpro.ui.community.CommunityRoutineDetailActivity
 import com.example.gymtrackpro.ui.community.CommunityViewModel
 import com.example.gymtrackpro.ui.navigation.MainBottomNav
 import com.example.gymtrackpro.utils.AppProvider
@@ -22,8 +24,15 @@ class ThirdHubActivity : AppCompatActivity() {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
     private val adapter = CommunityRoutineAdapter(
-        onClick = { _ ->
-            Toast.makeText(this, "Vista detalle publica: siguiente paso", Toast.LENGTH_SHORT).show()
+        onClick = { item ->
+            startActivity(Intent(this, CommunityRoutineDetailActivity::class.java).apply {
+                putExtra(CommunityRoutineDetailActivity.EXTRA_NAME, item.name)
+                putExtra(CommunityRoutineDetailActivity.EXTRA_OWNER_NAME, item.ownerName)
+                putStringArrayListExtra(
+                    CommunityRoutineDetailActivity.EXTRA_EXERCISE_IDS,
+                    ArrayList(item.exerciseIds)
+                )
+            })
         },
         onToggleFavorite = { item ->
             vm.toggleFavorite(item)

@@ -129,22 +129,12 @@ class GymRepository(
     suspend fun getRoutineExercises(routineId: Int): List<ExerciseEntity> {
         val exerciseIds = routineExerciseDao.getActiveExerciseIds(routineId)
         if (exerciseIds.isEmpty()) return emptyList()
-        val local = exerciseDao.getByIds(exerciseIds)
-        val localById = local.associateBy { it.id }
-        val missingIds = exerciseIds.filter { !localById.containsKey(it) }
+        return resolveExercisesByIds(exerciseIds)
+    }
 
-        if (missingIds.isNotEmpty() && isLoggedIn()) {
-            for (id in missingIds) {
-                try {
-                    fetchExerciseDetailFromApi(id)
-                } catch (_: Exception) {
-                    // Si falla un detalle puntual, continuar con los demas.
-                }
-            }
-        }
-
-        val refreshed = exerciseDao.getByIds(exerciseIds).associateBy { it.id }
-        return exerciseIds.mapNotNull { refreshed[it] }
+    suspend fun getExercisesByIds(exerciseIds: List<String>): List<ExerciseEntity> {
+        if (exerciseIds.isEmpty()) return emptyList()
+        return resolveExercisesByIds(exerciseIds.distinct())
     }
 
     suspend fun createRoutine(name: String, userId: Int = 1): Int {
@@ -362,7 +352,7 @@ class GymRepository(
         )
     }
 
-    suspend fun setCommunityRoutineFavorite(publicRoutineId: String, favorite: Boolean) {
+    suspend fun setCommunityRoutineFavorite(publicRoutineId: String, favorite: Boolean): CommunityFavoriteToggleDto {
         val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
         val bearer = "Bearer ${session.token}"
         val resp = if (favorite) {
@@ -371,7 +361,13 @@ class GymRepository(
             api.unfavoriteCommunityRoutine(bearer = bearer, id = publicRoutineId)
         }
         if (!resp.isSuccessful) throw IllegalStateException("No se pudo actualizar favorito")
+        val payload = resp.body() ?: CommunityFavoriteToggleDto(
+            message = if (favorite) "Favorito agregado" else "Favorito quitado",
+            favoritesCount = 0,
+            isFavorite = favorite
+        )
         pullFavoriteCommunityRoutinesToLocal()
+        return payload
     }
 
     private suspend fun pullFavoriteCommunityRoutinesToLocal() {
@@ -458,5 +454,24 @@ class GymRepository(
                 routineDao.markPendingUpsert(routineId)
             }
         }
+    }
+
+    private suspend fun resolveExercisesByIds(exerciseIds: List<String>): List<ExerciseEntity> {
+        val local = exerciseDao.getByIds(exerciseIds)
+        val localById = local.associateBy { it.id }
+        val missingIds = exerciseIds.filter { !localById.containsKey(it) }
+
+        if (missingIds.isNotEmpty() && isLoggedIn()) {
+            for (id in missingIds) {
+                try {
+                    fetchExerciseDetailFromApi(id)
+                } catch (_: Exception) {
+                    // Si falla un detalle puntual, continuar con los demas.
+                }
+            }
+        }
+
+        val refreshed = exerciseDao.getByIds(exerciseIds).associateBy { it.id }
+        return exerciseIds.mapNotNull { refreshed[it] }
     }
 }

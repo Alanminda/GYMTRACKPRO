@@ -27,8 +27,11 @@ class CommunityRoutineAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
+        val exerciseCount = if (item.exerciseCount > 0) item.exerciseCount else item.exerciseIds.distinct().size
         holder.b.tvName.text = item.name
-        holder.b.tvMeta.text = "${item.ownerName}  |  ${item.exerciseIds.size} ejercicios  |  ${item.favoritesCount} favoritos"
+        holder.b.tvOwner.text = "Creador: ${item.ownerName}"
+        holder.b.tvExercises.text = "Ejercicios: $exerciseCount"
+        holder.b.tvFavorites.text = "Favoritos: ${item.favoritesCount}"
         holder.b.btnFavorite.setImageResource(
             if (item.isFavorite) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off
         )
