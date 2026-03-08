@@ -21,6 +21,22 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 20:xx - Community Card Exercise Count Normalization - `fix`
+
+- Resumen: se corrige desfase entre conteo de ejercicios en tarjeta de comunidad y detalle de rutina.
+- Archivos modificados:
+  - `backend/index.js` -> normalizacion central de `exercise_ids` (trim, sin vacios, unicos) en respuestas de comunidad/share y `exerciseCount`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt` -> fallback de conteo ignora IDs vacios.
+- Motivo:
+  - Algunas rutinas publicas arrastraban IDs vacios/ruidosos que inflaban el numero en tarjeta, pero no cargaban en detalle.
+- Impacto:
+  - La tarjeta de comunidad muestra un conteo consistente con ejercicios realmente resolubles.
+- Verificacion:
+  - Revisión de flujo de serializacion backend y render en adapter completada.
+  - Validacion final tras redeploy pendiente.
+
+---
+
 ### 2026-03-08 20:xx - Community Count Accuracy + Realistic Seed x30 - `feat`
 
 - Resumen: se corrige consistencia de conteos en comunidad (ejercicios/favoritos) y se agrega seed realista de 30 ejemplos para pruebas.
