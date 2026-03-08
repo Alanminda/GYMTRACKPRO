@@ -38,6 +38,26 @@ class GymRepository(
 
     suspend fun logout() = userDao.clearSession()
 
+    suspend fun fetchProfile(): ProfileDto {
+        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
+        return api.getProfile("Bearer ${session.token}")
+    }
+
+    suspend fun updateProfile(name: String, email: String): ProfileDto {
+        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
+        val updated = api.updateProfile(
+            bearer = "Bearer ${session.token}",
+            body = ProfileUpdateRequest(name = name.trim(), email = email.trim())
+        )
+        userDao.saveSession(
+            session.copy(
+                name = updated.name,
+                email = updated.email
+            )
+        )
+        return updated
+    }
+
     fun observeExercisesLocal(): Flow<List<ExerciseEntity>> = exerciseDao.observeAll()
 
     suspend fun refreshExercisesFromApi() {

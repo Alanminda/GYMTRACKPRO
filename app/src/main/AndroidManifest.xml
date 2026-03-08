@@ -48,6 +48,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.community.CommunityRoutineDetailActivity"
             android:exported="false" />
             

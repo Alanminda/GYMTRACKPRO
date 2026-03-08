@@ -12,6 +12,15 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse
 
+    @GET("me")
+    suspend fun getProfile(@Header("Authorization") bearer: String): ProfileDto
+
+    @PUT("me")
+    suspend fun updateProfile(
+        @Header("Authorization") bearer: String,
+        @Body body: ProfileUpdateRequest
+    ): ProfileDto
+
     @GET("exercises")
     suspend fun getExercises(
         @Header("Authorization") bearer: String,

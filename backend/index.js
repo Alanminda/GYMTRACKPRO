@@ -334,6 +334,67 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
+app.get("/me", auth, async (req, res) => {
+  try {
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("id,name,email,created_at")
+      .eq("id", req.user.userId)
+      .maybeSingle();
+
+    if (error) return res.status(500).json({ message: "Error al obtener perfil" });
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    return res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.created_at,
+    });
+  } catch {
+    return res.status(500).json({ message: "Error al obtener perfil" });
+  }
+});
+
+app.put("/me", auth, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const newName = String(name || "").trim();
+    const newEmail = String(email || "").toLowerCase().trim();
+    if (!newName || !newEmail) {
+      return res.status(400).json({ message: "Nombre y email requeridos" });
+    }
+
+    const { data: existingByEmail, error: existingError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", newEmail)
+      .neq("id", req.user.userId)
+      .maybeSingle();
+    if (existingError) return res.status(500).json({ message: "Error al validar email" });
+    if (existingByEmail) return res.status(409).json({ message: "Email ya registrado" });
+
+    const { data: updated, error } = await supabase
+      .from("users")
+      .update({ name: newName, email: newEmail })
+      .eq("id", req.user.userId)
+      .select("id,name,email,created_at")
+      .maybeSingle();
+
+    if (error) return res.status(500).json({ message: "Error al actualizar perfil" });
+    if (!updated) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    return res.json({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      createdAt: updated.created_at,
+    });
+  } catch {
+    return res.status(500).json({ message: "Error al actualizar perfil" });
+  }
+});
+
 app.get("/exercises", auth, async (req, res) => {
   try {
     const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);

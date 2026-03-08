@@ -21,6 +21,36 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 20:xx - Profile Module + 4th Bottom Nav Tab - `feat`
+
+- Resumen: se agrega modulo `Perfil` como cuarta navegacion del hub, con visual Material 3, edicion de datos y cierre de sesion para cambiar cuenta.
+- Archivos modificados:
+  - `backend/index.js` -> nuevos endpoints autenticados:
+    - `GET /me` (obtener perfil actual)
+    - `PUT /me` (editar nombre/email con validacion de email unico)
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/ProfileDtos.kt` -> DTOs de perfil.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt` -> contrato Retrofit de `getProfile`/`updateProfile`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> metodos `fetchProfile()` y `updateProfile()` (actualizando tambien sesion local).
+  - `app/src/main/java/com/example/gymtrackpro/ui/profile/ProfileViewModel.kt` -> logica de carga, edicion y logout.
+  - `app/src/main/java/com/example/gymtrackpro/ui/profile/ProfileActivity.kt` -> UI de perfil, dialogo de edicion y cierre de sesion con reset de stack a login.
+  - `app/src/main/res/layout/activity_profile.xml` -> nueva pantalla de perfil con estilo Material 3.
+  - `app/src/main/res/layout/dialog_edit_profile.xml` -> formulario simple para editar nombre/email.
+  - `app/src/main/res/menu/main_bottom_nav.xml` -> nuevo item `nav_profile`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/navigation/MainBottomNav.kt` -> ruta de navegacion al nuevo tab de perfil.
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt` -> soporte para `ProfileViewModel`.
+  - `app/src/main/AndroidManifest.xml` -> registro de `ProfileActivity`.
+- Motivo:
+  - Permitir ver/editar informacion de usuario y facilitar cambio entre cuentas durante pruebas.
+- Impacto:
+  - El hub principal ahora tiene 4 tabs: Home, Ejercicios, Comunidad y Perfil.
+  - Usuario puede editar datos basicos y cerrar sesion desde Perfil.
+  - Logout redirige a Login y permite entrar con otra cuenta.
+- Verificacion:
+  - Sintaxis backend valida con `node --check backend/index.js`.
+  - Validacion funcional final en Android Studio/dispositivo pendiente.
+
+---
+
 ### 2026-03-08 20:xx - Community Card Exercise Count Normalization - `fix`
 
 - Resumen: se corrige desfase entre conteo de ejercicios en tarjeta de comunidad y detalle de rutina.
