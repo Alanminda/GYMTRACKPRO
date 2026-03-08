@@ -53,11 +53,12 @@ function auth(req, res, next) {
 function mapExerciseDto(item) {
   const id = item.id || item._id;
   if (!id || !item.name) return null;
+  const rawGif = item.gifUrl || item.gif_url || item.image || item.imageUrl || null;
 
   return {
     id,
     name: item.name,
-    gifUrl: item.gifUrl || item.gif_url || item.image || item.imageUrl || null,
+    gifUrl: normalizeGifUrl(rawGif, id),
     bodyPart: item.bodyPart || null,
     equipment: item.equipment || null,
     target: item.target || null,
@@ -65,6 +66,20 @@ function mapExerciseDto(item) {
     secondaryMuscles: Array.isArray(item.secondaryMuscles) ? item.secondaryMuscles : [],
     instructions: Array.isArray(item.instructions) ? item.instructions : [],
   };
+}
+
+function normalizeGifUrl(url, id) {
+  const value = String(url || "").trim();
+  if (value) {
+    if (value.startsWith("http://")) return `https://${value.slice(7)}`;
+    if (value.startsWith("https://")) return value;
+  }
+
+  // Fallback clasico de ExerciseDB v1 por id numerico (ej: 0001).
+  if (/^\d{4,}$/.test(String(id))) {
+    return `https://d205bpvrqc9yn1.cloudfront.net/${id}.gif`;
+  }
+  return null;
 }
 
 async function fetchExercisesFromRapidApi(limit = EXTERNAL_PAGE_SIZE, offset = 0) {
