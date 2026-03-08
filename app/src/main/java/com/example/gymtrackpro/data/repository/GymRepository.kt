@@ -78,6 +78,28 @@ class GymRepository(
         return mapped
     }
 
+    suspend fun fetchExerciseDetailFromApi(exerciseId: String): ExerciseEntity? {
+        val session = userDao.getSession() ?: return null
+        val dto = api.getExerciseById(
+            bearer = "Bearer ${session.token}",
+            id = exerciseId
+        )
+        val resolvedId = dto.mongoId ?: dto.id ?: exerciseId
+        val mapped = ExerciseEntity(
+            id = resolvedId,
+            name = dto.name,
+            muscleGroup = dto.muscleGroup ?: dto.target ?: "general",
+            gifUrl = dto.gifUrl,
+            bodyPart = dto.bodyPart,
+            equipment = dto.equipment,
+            target = dto.target,
+            secondaryMuscles = dto.secondaryMuscles?.joinToString(", "),
+            instructions = dto.instructions?.joinToString("\n")
+        )
+        exerciseDao.upsertAll(listOf(mapped))
+        return mapped
+    }
+
     fun observeProgress(userId: Int): Flow<List<ProgressEntity>> = progressDao.observeByUser(userId)
 
     suspend fun addProgress(dateIso: String, weight: Double, note: String?) {

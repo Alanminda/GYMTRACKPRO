@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.gymtrackpro.data.repository.GymRepository
 import com.example.gymtrackpro.ui.auth.AuthViewModel
+import com.example.gymtrackpro.ui.exercises.ExerciseDetailViewModel
 import com.example.gymtrackpro.ui.exercises.ExercisesViewModel
 import com.example.gymtrackpro.ui.home.HomeViewModel
 
@@ -13,6 +14,7 @@ class ViewModelFactory(private val repo: GymRepository) : ViewModelProvider.Fact
             modelClass.isAssignableFrom(AuthViewModel::class.java) -> AuthViewModel(repo) as T
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(repo) as T
             modelClass.isAssignableFrom(ExercisesViewModel::class.java) -> ExercisesViewModel(repo) as T
+            modelClass.isAssignableFrom(ExerciseDetailViewModel::class.java) -> ExerciseDetailViewModel(repo) as T
             else -> throw IllegalArgumentException("ViewModel no soportado")
         }
     }

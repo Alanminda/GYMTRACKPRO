@@ -23,6 +23,7 @@ class ExercisesActivity : AppCompatActivity() {
 
     private val adapter = ExerciseAdapter { exercise ->
         startActivity(Intent(this, ExerciseDetailActivity::class.java).apply {
+            putExtra(ExerciseDetailActivity.EXTRA_ID, exercise.id)
             putExtra(ExerciseDetailActivity.EXTRA_NAME, exercise.name)
             putExtra(ExerciseDetailActivity.EXTRA_MUSCLE_GROUP, exercise.muscleGroup)
             putExtra(ExerciseDetailActivity.EXTRA_BODY_PART, exercise.bodyPart)
