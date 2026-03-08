@@ -57,7 +57,7 @@ function mapExerciseDto(item) {
   return {
     id,
     name: item.name,
-    gifUrl: item.gifUrl || item.gif_url || null,
+    gifUrl: item.gifUrl || item.gif_url || item.image || item.imageUrl || null,
     bodyPart: item.bodyPart || null,
     equipment: item.equipment || null,
     target: item.target || null,
@@ -274,12 +274,15 @@ app.get("/exercises", auth, async (req, res) => {
 });
 
 app.get("/exercises/debug", auth, (_req, res) => {
+  const sample = exerciseCache.items[0] || null;
   return res.json({
     cacheItems: exerciseCache.items.length,
     remoteOffset: exerciseCache.remoteOffset,
     sourceExhausted: exerciseCache.sourceExhausted,
     externalPageSize: EXTERNAL_PAGE_SIZE,
     maxCacheItems: MAX_CACHE_ITEMS,
+    sampleHasGif: Boolean(sample?.gifUrl),
+    sampleGifUrl: sample?.gifUrl || null,
   });
 });
 

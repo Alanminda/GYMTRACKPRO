@@ -20,7 +20,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
         val bodyPart = intent.getStringExtra(EXTRA_BODY_PART).orEmpty()
         val equipment = intent.getStringExtra(EXTRA_EQUIPMENT).orEmpty()
         val target = intent.getStringExtra(EXTRA_TARGET).orEmpty()
-        val gifUrl = intent.getStringExtra(EXTRA_GIF_URL).orEmpty()
+        val gifUrl = normalizeMediaUrl(intent.getStringExtra(EXTRA_GIF_URL).orEmpty())
         val secondaryMuscles = intent.getStringExtra(EXTRA_SECONDARY_MUSCLES).orEmpty()
         val instructions = intent.getStringExtra(EXTRA_INSTRUCTIONS).orEmpty()
 
@@ -37,12 +37,8 @@ class ExerciseDetailActivity : AppCompatActivity() {
         } else {
             b.ivExercise.visibility = View.VISIBLE
             Glide.with(this)
-                .asGif()
                 .load(gifUrl)
-                .error(
-                    Glide.with(this)
-                        .load(gifUrl)
-                )
+                .thumbnail(0.25f)
                 .into(b.ivExercise)
         }
 
@@ -51,6 +47,15 @@ class ExerciseDetailActivity : AppCompatActivity() {
 
     private fun valueOrFallback(label: String, value: String): String {
         return if (value.isBlank()) "$label: N/D" else "$label: $value"
+    }
+
+    private fun normalizeMediaUrl(url: String): String {
+        if (url.isBlank()) return ""
+        return if (url.startsWith("http://")) {
+            "https://${url.removePrefix("http://")}"
+        } else {
+            url
+        }
     }
 
     companion object {
