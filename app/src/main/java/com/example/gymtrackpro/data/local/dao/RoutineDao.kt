@@ -13,6 +13,9 @@ interface RoutineDao {
     @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): RoutineEntity?
 
+    @Query("SELECT * FROM routines WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getByRemoteId(remoteId: String): RoutineEntity?
+
     @Query("SELECT * FROM routines WHERE syncState != 'SYNCED' OR deleted = 1")
     suspend fun getPendingSync(): List<RoutineEntity>
 

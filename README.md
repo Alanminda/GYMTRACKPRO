@@ -21,6 +21,60 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 15:xx - Hub Visual Polish + FAB Position - `fix`
+
+- Resumen: se mejora apariencia del hub inferior y se corrige superposicion del boton `+` en Home.
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_home.xml` -> `btnAddRoutine` migrado a `FloatingActionButton` y anclado sobre el hub; ajustes de constraints para evitar interposicion.
+  - `app/src/main/res/layout/activity_home.xml` -> `BottomNavigationView` con estilo visual Material 3 (`colorSurfaceContainer`, elevacion, labels visibles).
+  - `app/src/main/res/layout/activity_exercises.xml` -> mismo tratamiento visual para hub inferior.
+  - `app/src/main/res/layout/activity_third_hub.xml` -> mismo tratamiento visual para hub inferior.
+- Motivo:
+  - El boton de crear rutina se montaba sobre el hub y la navegacion inferior se veia plana.
+- Impacto:
+  - Mejor jerarquia visual.
+  - `+` queda separado del hub y accesible sin tapar tabs.
+- Verificacion:
+  - Revision de IDs de binding y constraints completada.
+  - Prueba visual final pendiente en dispositivo.
+
+---
+
+### 2026-03-08 14:xx - Routines Save Logic (Logged vs Guest) - `fix`
+
+- Resumen: se corrige flujo de guardado de rutinas para separar claramente modo usuario iniciado (local + remoto) y modo invitado (solo local).
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> `syncData()` ahora sincroniza solo si hay sesion; `createRoutine()` distingue invitado vs iniciado y muestra mensajes reales segun estado de sync.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `syncForLoggedUser()` (push pendientes + pull remoto), `hasPendingRoutineSync()`, y `pullRemoteRoutinesToLocal()` para recuperar rutinas remotas en local.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineDao.kt` -> nuevo `getByRemoteId(remoteId)`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> `getRoutineExercises()` ahora intenta completar ejercicios faltantes por ID desde API si no existen localmente.
+- Motivo:
+  - Las rutinas creadas con la misma cuenta no siempre aparecian porque faltaba la fase de pull remoto a local y no habia separacion explicita para modo invitado.
+- Impacto:
+  - Usuario iniciado: rutinas se guardan localmente y se sincronizan con backend; al iniciar se recuperan desde remoto.
+  - Invitado: rutinas se guardan solo en local, sin intentar sincronizacion remota.
+- Verificacion:
+  - Revision de flujo HomeViewModel -> Repository -> DAO completada.
+  - Prueba funcional pendiente en dispositivo (crear rutina logueado, reinstalar app, volver a login y validar persistencia).
+
+---
+
+### 2026-03-08 13:xx - Exercises Initial Load Optimization - `perf`
+
+- Resumen: se optimiza la apertura de pantalla de ejercicios cargando solo 10 items al inicio y manteniendo paginacion normal en lotes siguientes.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> page size dinamico (`INITIAL_PAGE_SIZE=10`, `NEXT_PAGE_SIZE=50`).
+- Motivo:
+  - Reducir lag inicial al entrar a la pantalla de ejercicios.
+- Impacto:
+  - Primera pintura mas rapida.
+  - Infinite scroll conserva carga masiva posterior como flujo habitual.
+- Verificacion:
+  - Revision de flujo de paginacion y offset completada.
+  - Prueba funcional en dispositivo pendiente.
+
+---
+
 ### 2026-03-08 12:xx - Bottom Hub Selected State Sync - `fix`
 
 - Resumen: se corrige bug visual donde el tab resaltado del hub inferior quedaba en pantalla previa al volver o reusar Activities.

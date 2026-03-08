@@ -24,6 +24,7 @@ class GymRepository(
 ) {
 
     suspend fun getSession(): UserLocalEntity? = userDao.getSession()
+    suspend fun isLoggedIn(): Boolean = userDao.getSession() != null
 
     suspend fun register(name: String, email: String, password: String) {
         val res = api.register(RegisterRequest(name, email, password))
@@ -121,11 +122,27 @@ class GymRepository(
     }
 
     fun observeRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeActiveByUser(userId)
+    suspend fun hasPendingRoutineSync(): Boolean = routineDao.getPendingSync().isNotEmpty()
 
     suspend fun getRoutineExercises(routineId: Int): List<ExerciseEntity> {
         val exerciseIds = routineExerciseDao.getActiveExerciseIds(routineId)
         if (exerciseIds.isEmpty()) return emptyList()
-        return exerciseDao.getByIds(exerciseIds)
+        val local = exerciseDao.getByIds(exerciseIds)
+        val localById = local.associateBy { it.id }
+        val missingIds = exerciseIds.filter { !localById.containsKey(it) }
+
+        if (missingIds.isNotEmpty() && isLoggedIn()) {
+            for (id in missingIds) {
+                try {
+                    fetchExerciseDetailFromApi(id)
+                } catch (_: Exception) {
+                    // Si falla un detalle puntual, continuar con los demas.
+                }
+            }
+        }
+
+        val refreshed = exerciseDao.getByIds(exerciseIds).associateBy { it.id }
+        return exerciseIds.mapNotNull { refreshed[it] }
     }
 
     suspend fun createRoutine(name: String, userId: Int = 1): Int {
@@ -216,6 +233,71 @@ class GymRepository(
     suspend fun syncAllPending() {
         syncPendingRoutines()
         syncPendingProgress()
+    }
+
+    suspend fun syncForLoggedUser() {
+        if (!isLoggedIn()) return
+        syncAllPending()
+        pullRemoteRoutinesToLocal()
+    }
+
+    private suspend fun pullRemoteRoutinesToLocal() {
+        val session = userDao.getSession() ?: return
+        val bearer = "Bearer ${session.token}"
+        val remoteRoutines = api.getRoutines(bearer)
+
+        val allExerciseIds = linkedSetOf<String>()
+        for (remote in remoteRoutines) {
+            val existing = routineDao.getByRemoteId(remote._id)
+            val localId = if (existing == null) {
+                routineDao.insert(
+                    RoutineEntity(
+                        remoteId = remote._id,
+                        name = remote.name,
+                        userId = 1,
+                        syncState = "SYNCED",
+                        deleted = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                ).toInt()
+            } else {
+                routineDao.update(
+                    existing.copy(
+                        name = remote.name,
+                        syncState = "SYNCED",
+                        deleted = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+                existing.id
+            }
+
+            routineExerciseDao.hardDeleteByRoutine(localId)
+            remote.exerciseIds.distinct().forEach { exerciseId ->
+                allExerciseIds.add(exerciseId)
+                routineExerciseDao.upsert(
+                    RoutineExerciseEntity(
+                        routineId = localId,
+                        exerciseId = exerciseId,
+                        syncState = "SYNCED",
+                        deleted = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+            }
+        }
+
+        if (allExerciseIds.isNotEmpty()) {
+            val localExerciseIds = exerciseDao.getByIds(allExerciseIds.toList()).map { it.id }.toSet()
+            val missing = allExerciseIds.filter { it !in localExerciseIds }
+            for (exerciseId in missing) {
+                try {
+                    fetchExerciseDetailFromApi(exerciseId)
+                } catch (_: Exception) {
+                    // No bloquear sync por un ejercicio puntual.
+                }
+            }
+        }
     }
 
     private suspend fun syncRoutineExercisesBySet(routineId: Int, remoteRoutineId: String, bearer: String) {
