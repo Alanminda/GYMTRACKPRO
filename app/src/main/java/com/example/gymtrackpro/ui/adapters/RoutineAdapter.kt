@@ -8,7 +8,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gymtrackpro.data.local.entities.RoutineEntity
 import com.example.gymtrackpro.databinding.ItemExerciseBinding
 
-class RoutineAdapter : ListAdapter<RoutineEntity, RoutineAdapter.VH>(Diff) {
+class RoutineAdapter(
+    private val onClick: (RoutineEntity) -> Unit
+) : ListAdapter<RoutineEntity, RoutineAdapter.VH>(Diff) {
 
     object Diff : DiffUtil.ItemCallback<RoutineEntity>() {
         override fun areItemsTheSame(old: RoutineEntity, new: RoutineEntity) = old.id == new.id
@@ -26,6 +28,7 @@ class RoutineAdapter : ListAdapter<RoutineEntity, RoutineAdapter.VH>(Diff) {
         val item = getItem(position)
         holder.b.tvName.text = item.name
         holder.b.tvGroup.text = "Rutina"
+        holder.b.root.setOnClickListener { onClick(item) }
     }
 
     fun submit(items: List<RoutineEntity>) = submitList(items)

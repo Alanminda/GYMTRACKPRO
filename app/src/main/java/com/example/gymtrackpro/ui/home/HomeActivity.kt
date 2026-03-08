@@ -12,6 +12,7 @@ import com.example.gymtrackpro.R
 import com.example.gymtrackpro.databinding.ActivityHomeBinding
 import com.example.gymtrackpro.ui.adapters.RoutineAdapter
 import com.example.gymtrackpro.ui.exercises.ExercisesActivity
+import com.example.gymtrackpro.ui.routines.RoutineDetailActivity
 import com.example.gymtrackpro.utils.AppProvider
 import com.example.gymtrackpro.utils.ViewModelFactory
 
@@ -23,7 +24,12 @@ class HomeActivity : AppCompatActivity() {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
 
-    private val adapter = RoutineAdapter()
+    private val adapter = RoutineAdapter { routine ->
+        startActivity(Intent(this, RoutineDetailActivity::class.java).apply {
+            putExtra(RoutineDetailActivity.EXTRA_ROUTINE_ID, routine.id)
+            putExtra(RoutineDetailActivity.EXTRA_ROUTINE_NAME, routine.name)
+        })
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

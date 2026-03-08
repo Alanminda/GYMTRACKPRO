@@ -21,6 +21,45 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 10:xx - Routine Detail Screen - `feat`
+
+- Resumen: desde Home, al tocar una rutina se abre una pantalla con los ejercicios añadidos a esa rutina.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> click en item de rutina navega a `RoutineDetailActivity`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> adapter actualizado para recibir callback de click.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> nueva pantalla de detalle de rutina con lista de ejercicios y estado vacio.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailViewModel.kt` -> carga de ejercicios asociados a una rutina local.
+  - `app/src/main/res/layout/activity_routine_detail.xml` -> nuevo XML de UI para detalle de rutina.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/ExerciseDao.kt` -> nuevo `getByIds`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `getRoutineExercises(routineId)`.
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt` -> soporte para `RoutineDetailViewModel`.
+  - `app/src/main/AndroidManifest.xml` -> registro de `RoutineDetailActivity`.
+- Motivo:
+  - Continuar flujo funcional de rutinas mostrando su contenido real desde Home.
+- Impacto:
+  - El usuario puede inspeccionar ejercicios ya añadidos a cada rutina.
+  - Si una rutina no tiene ejercicios vinculados, se muestra `No hay ejercicios añadidos`.
+- Verificacion:
+  - Revision de flujo Home -> Detalle de rutina completada.
+  - Build final pendiente en Android Studio local.
+
+---
+
+### 2026-03-08 09:xx - Exercise Detail Media Fallback UI - `fix`
+
+- Resumen: se ajusta la carga de imagen en detalle para evitar icono de error visible y usar doble fuente de media.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> fuente primaria via proxy backend `/exercises/{id}/media` y fallback automatico a `gifUrl` directo si existe.
+- Motivo:
+  - Algunos ejercicios mostraban icono de imagen rota cuando una fuente fallaba.
+- Impacto:
+  - Mejor UX: menos errores visuales y mayor tasa de imagen cargada.
+- Verificacion:
+  - Revision de flujo de render completada.
+  - Prueba en dispositivo pendiente.
+
+---
+
 ### 2026-03-08 08:xx - Media Proxy Resilience - `fix`
 
 - Resumen: se fortalece el endpoint de media para que no dependa solo de una URL externa; ahora intenta descarga directa de imagen desde candidatos RapidAPI cuando falla fetch externo.

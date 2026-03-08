@@ -9,6 +9,9 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises")
     fun observeAll(): Flow<List<ExerciseEntity>>
 
+    @Query("SELECT * FROM exercises WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<String>): List<ExerciseEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<ExerciseEntity>)
 
