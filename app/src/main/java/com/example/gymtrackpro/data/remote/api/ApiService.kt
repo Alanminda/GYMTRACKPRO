@@ -55,6 +55,34 @@ interface ApiService {
         @Body body: RoutineExerciseSyncRequest
     ): Response<Unit>
 
+    @POST("routines/{id}/share")
+    suspend fun shareRoutine(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String
+    ): CommunityRoutineDto
+
+    @GET("community/routines")
+    suspend fun getCommunityRoutines(
+        @Header("Authorization") bearer: String,
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int
+    ): List<CommunityRoutineDto>
+
+    @POST("community/routines/{id}/favorite")
+    suspend fun favoriteCommunityRoutine(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String
+    ): Response<Unit>
+
+    @HTTP(method = "DELETE", path = "community/routines/{id}/favorite", hasBody = false)
+    suspend fun unfavoriteCommunityRoutine(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String
+    ): Response<Unit>
+
+    @GET("community/favorites")
+    suspend fun getCommunityFavorites(@Header("Authorization") bearer: String): List<CommunityRoutineDto>
+
     @POST("progress")
     suspend fun sendProgress(
         @Header("Authorization") bearer: String,

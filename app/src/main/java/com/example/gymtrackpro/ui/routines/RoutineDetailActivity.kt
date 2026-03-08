@@ -42,15 +42,21 @@ class RoutineDetailActivity : AppCompatActivity() {
 
         routineId = intent.getIntExtra(EXTRA_ROUTINE_ID, -1)
         val routineName = intent.getStringExtra(EXTRA_ROUTINE_NAME).orEmpty()
+        val routineType = intent.getStringExtra(EXTRA_ROUTINE_TYPE).orEmpty()
 
         b.tvTitle.text = if (routineName.isBlank()) "Rutina" else routineName
-        b.btnAddExerciseToRoutine.setOnClickListener {
-            if (routineId > 0) {
-                startActivity(
-                    Intent(this, com.example.gymtrackpro.ui.exercises.ExercisesActivity::class.java).apply {
-                        putExtra(com.example.gymtrackpro.ui.exercises.ExercisesActivity.EXTRA_TARGET_ROUTINE_ID, routineId)
-                    }
-                )
+        if (routineType != "OWN") {
+            b.btnAddExerciseToRoutine.visibility = View.GONE
+        } else {
+            b.btnAddExerciseToRoutine.visibility = View.VISIBLE
+            b.btnAddExerciseToRoutine.setOnClickListener {
+                if (routineId > 0) {
+                    startActivity(
+                        Intent(this, com.example.gymtrackpro.ui.exercises.ExercisesActivity::class.java).apply {
+                            putExtra(com.example.gymtrackpro.ui.exercises.ExercisesActivity.EXTRA_TARGET_ROUTINE_ID, routineId)
+                        }
+                    )
+                }
             }
         }
 
@@ -82,5 +88,6 @@ class RoutineDetailActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_ROUTINE_ID = "extra_routine_id"
         const val EXTRA_ROUTINE_NAME = "extra_routine_name"
+        const val EXTRA_ROUTINE_TYPE = "extra_routine_type"
     }
 }
