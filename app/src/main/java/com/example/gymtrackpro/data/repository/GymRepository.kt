@@ -62,9 +62,12 @@ class GymRepository(
                     id = it,
                     name = dto.name,
                     muscleGroup = dto.muscleGroup ?: dto.target ?: "general",
+                    gifUrl = dto.gifUrl,
                     bodyPart = dto.bodyPart,
                     equipment = dto.equipment,
-                    target = dto.target
+                    target = dto.target,
+                    secondaryMuscles = dto.secondaryMuscles?.joinToString(", "),
+                    instructions = dto.instructions?.joinToString("\n")
                 )
             }
         }

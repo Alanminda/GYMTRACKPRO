@@ -21,6 +21,48 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-07 17:xx - Exercise Detail Screen - `feat`
+
+- Resumen: al tocar una tarjeta de ejercicio se abre una nueva pantalla con toda la informacion disponible, incluyendo GIF/imagen cuando la API lo entrega.
+- Archivos modificados:
+  - `backend/index.js` -> se amplian campos de respuesta de ejercicios (`gifUrl`, `secondaryMuscles`, `instructions`).
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/ExerciseDtos.kt` -> DTO actualizado con campos de detalle.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/ExerciseEntity.kt` -> entidad local extendida con `gifUrl`, musculos secundarios e instrucciones.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/db/AppDatabase.kt` -> version de Room actualizada a `3`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> mapeo de datos de detalle desde API a Room.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt` -> click en tarjeta para abrir detalle.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> navegacion a `ExerciseDetailActivity` con extras.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> nueva activity de detalle con carga de GIF/imagen.
+  - `app/src/main/res/layout/activity_exercise_detail.xml` -> nuevo XML de UI para mostrar datos completos.
+  - `app/src/main/AndroidManifest.xml` -> registro de `ExerciseDetailActivity`.
+  - `app/build.gradle.kts` -> dependencia `Glide` para mostrar GIF/imagen remota.
+- Motivo:
+  - Completar flujo de ejercicios con vista detallada y visual mas rica al seleccionar una tarjeta.
+- Impacto:
+  - El usuario puede abrir y revisar detalle completo de cada ejercicio.
+  - Si la API incluye `gifUrl`, se visualiza animacion; si no, se oculta el bloque de imagen.
+- Verificacion:
+  - Validacion estatica de referencias y sintaxis backend completada.
+  - Build Android pendiente en entorno local con JDK/JAVA_HOME configurado.
+
+---
+
+### 2026-03-07 16:xx - Exercises Loading UX - `fix`
+
+- Resumen: se corrige bug visual de infinite scroll donde el indicador de carga quedaba centrado durante paginacion.
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_exercises.xml` -> se separan dos indicadores: `progressInitial` (centro) y `progressPaging` (inferior, pequeno).
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> render de carga por contexto: inicial cuando no hay items, paginacion cuando ya hay lista.
+- Motivo:
+  - Evitar que la carga incremental tape visualmente la lista al bajar en infinite scroll.
+- Impacto:
+  - Mejor experiencia visual: carga inicial centrada y carga de nuevas paginas en la parte baja.
+- Verificacion:
+  - Revision de binding y estados de visibilidad completada.
+  - Prueba funcional pendiente en emulador/dispositivo.
+
+---
+
 ### 2026-03-07 15:xx - Infinite Scroll Provider Fallback - `fix`
 
 - Resumen: se ajusta infinite scroll para escenarios donde la API externa devuelve lotes fijos o ignora parcialmente `offset`.
