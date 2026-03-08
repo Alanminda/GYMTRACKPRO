@@ -42,13 +42,14 @@ class RoutineAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
+        val duration = parseDurationFromName(item.name)
         holder.b.tvName.text = item.name
         if (item.routineType == "FAVORITE") {
-            holder.b.tvGroup.text = "Favorita de ${item.ownerName ?: "Comunidad"}"
+            holder.b.tvGroup.text = "Favorita de ${item.ownerName ?: "Comunidad"}  |  ${duration?.let { "$it min" } ?: "Tiempo N/D"}"
             holder.b.foregroundContainer.strokeColor =
                 ContextCompat.getColor(holder.b.root.context, android.R.color.holo_orange_dark)
         } else {
-            holder.b.tvGroup.text = "Rutina propia"
+            holder.b.tvGroup.text = "Rutina propia  |  ${duration?.let { "$it min" } ?: "Tiempo N/D"}"
             holder.b.foregroundContainer.strokeColor =
                 ContextCompat.getColor(holder.b.root.context, android.R.color.holo_green_dark)
         }
@@ -104,5 +105,10 @@ class RoutineAdapter(
     fun resetSwipe(position: Int) {
         if (position == NO_POSITION) return
         notifyItemChanged(position, PAYLOAD_ACTION_STATE)
+    }
+
+    private fun parseDurationFromName(name: String): Int? {
+        val match = Regex("\\((\\d+)\\s*min\\)", RegexOption.IGNORE_CASE).find(name)
+        return match?.groupValues?.getOrNull(1)?.toIntOrNull()
     }
 }

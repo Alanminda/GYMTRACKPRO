@@ -40,7 +40,7 @@ class HomeActivity : AppCompatActivity() {
             confirmDeleteRoutine(routine)
         },
         onShare = { routine ->
-            vm.shareRoutine(routine.id)
+            vm.shareRoutine(routine.id, routine.name)
         }
     )
 

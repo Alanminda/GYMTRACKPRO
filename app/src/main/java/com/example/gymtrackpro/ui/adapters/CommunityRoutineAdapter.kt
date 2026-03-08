@@ -32,14 +32,21 @@ class CommunityRoutineAdapter(
         } else {
             item.exerciseIds.map { it.trim() }.filter { it.isNotEmpty() }.distinct().size
         }
+        val duration = item.durationMinutes ?: parseDurationFromName(item.name)
         holder.b.tvName.text = item.name
         holder.b.tvOwner.text = "Creador: ${item.ownerName}"
         holder.b.tvExercises.text = "Ejercicios: $exerciseCount"
+        holder.b.tvDuration.text = "Tiempo: ${duration?.let { "$it min" } ?: "N/D"}"
         holder.b.tvFavorites.text = "Favoritos: ${item.favoritesCount}"
         holder.b.btnFavorite.setImageResource(
             if (item.isFavorite) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off
         )
         holder.b.btnFavorite.setOnClickListener { onToggleFavorite(item) }
         holder.b.root.setOnClickListener { onClick(item) }
+    }
+
+    private fun parseDurationFromName(name: String): Int? {
+        val match = Regex("\\((\\d+)\\s*min\\)", RegexOption.IGNORE_CASE).find(name)
+        return match?.groupValues?.getOrNull(1)?.toIntOrNull()
     }
 }

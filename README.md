@@ -21,6 +21,30 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 20:xx - Share Confirmation + Routine Duration in Community/Favorites - `feat`
+
+- Resumen: se mejora feedback al compartir rutina y se muestra tiempo de rutina en tarjetas de Comunidad y Favoritas.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> mensaje de exito de share ahora incluye nombre de rutina.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> share envia nombre al ViewModel para confirmacion visible.
+  - `backend/index.js` -> respuestas de comunidad/share incluyen `durationMinutes` parseado de nombre (`(xx min)`).
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/RoutineDtos.kt` -> `CommunityRoutineDto` agrega `durationMinutes`.
+  - `app/src/main/res/layout/item_community_routine.xml` -> nueva linea visual para tiempo.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt` -> renderiza `Tiempo: xx min`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt` -> envia duracion al detalle comunitario.
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityRoutineDetailActivity.kt` -> subtitulo muestra tiempo junto a owner/ejercicios.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> Home ahora muestra tiempo en propias y favoritas.
+- Motivo:
+  - Confirmar visualmente que la accion de compartir se ejecuto y enriquecer tarjetas con dato clave de planificacion (duracion).
+- Impacto:
+  - Usuario recibe confirmacion explicita al compartir.
+  - Comunidad y Favoritas muestran duracion de rutina de forma consistente.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion funcional tras redeploy pendiente.
+
+---
+
 ### 2026-03-08 20:xx - Profile Module + 4th Bottom Nav Tab - `feat`
 
 - Resumen: se agrega modulo `Perfil` como cuarta navegacion del hub, con visual Material 3, edicion de datos y cierre de sesion para cambiar cuenta.

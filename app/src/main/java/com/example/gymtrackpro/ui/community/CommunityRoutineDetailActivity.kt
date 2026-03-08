@@ -41,13 +41,14 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
         val name = intent.getStringExtra(EXTRA_NAME).orEmpty()
         val ownerName = intent.getStringExtra(EXTRA_OWNER_NAME).orEmpty()
         val ids = intent.getStringArrayListExtra(EXTRA_EXERCISE_IDS).orEmpty()
+        val durationMinutes = intent.getIntExtra(EXTRA_DURATION_MINUTES, -1).takeIf { it > 0 }
         val expectedCount = ids.distinct().size
 
         b.tvTitle.text = if (name.isBlank()) "Rutina de comunidad" else name
         b.tvSubtitle.text = if (ownerName.isBlank()) {
-            "$expectedCount ejercicios"
+            "$expectedCount ejercicios  |  ${durationMinutes?.let { "$it min" } ?: "Tiempo N/D"}"
         } else {
-            "Por $ownerName  |  $expectedCount ejercicios"
+            "Por $ownerName  |  $expectedCount ejercicios  |  ${durationMinutes?.let { "$it min" } ?: "Tiempo N/D"}"
         }
 
         b.rvExercises.layoutManager = LinearLayoutManager(this)
@@ -59,9 +60,9 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
             b.tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             val loadedCount = items.size
             b.tvSubtitle.text = if (ownerName.isBlank()) {
-                "$loadedCount ejercicios"
+                "$loadedCount ejercicios  |  ${durationMinutes?.let { "$it min" } ?: "Tiempo N/D"}"
             } else {
-                "Por $ownerName  |  $loadedCount ejercicios"
+                "Por $ownerName  |  $loadedCount ejercicios  |  ${durationMinutes?.let { "$it min" } ?: "Tiempo N/D"}"
             }
         }
         vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
@@ -74,5 +75,6 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
         const val EXTRA_NAME = "extra_name"
         const val EXTRA_OWNER_NAME = "extra_owner_name"
         const val EXTRA_EXERCISE_IDS = "extra_exercise_ids"
+        const val EXTRA_DURATION_MINUTES = "extra_duration_minutes"
     }
 }

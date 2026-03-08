@@ -268,6 +268,13 @@ function normalizeExerciseIds(ids) {
   return [...new Set((ids || []).map((e) => String(e || "").trim()).filter(Boolean))];
 }
 
+function parseDurationMinutesFromName(name) {
+  const match = String(name || "").match(/\((\d+)\s*min\)/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
 app.post("/auth/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -688,6 +695,7 @@ app.post("/routines/:id/share", auth, async (req, res) => {
       ownerName: shared.owner_name || "Usuario",
       exerciseIds: normalizeExerciseIds(shared.exercise_ids),
       exerciseCount: normalizeExerciseIds(shared.exercise_ids).length,
+      durationMinutes: parseDurationMinutesFromName(shared.name),
       isFavorite: false,
       favoritesCount: 0,
     });
@@ -740,6 +748,7 @@ app.get("/community/routines", auth, async (req, res) => {
         ownerName: r.owner_name || "Usuario",
         exerciseIds: normalizedIds,
         exerciseCount: normalizedIds.length,
+        durationMinutes: parseDurationMinutesFromName(r.name),
         favoritesCount: favoritesByRoutineId.get(r.id) || 0,
         isFavorite: favoriteIdsByUser.has(r.id),
       };
@@ -851,6 +860,7 @@ app.get("/community/favorites", auth, async (req, res) => {
           ownerName: r.owner_name || "Usuario",
           exerciseIds: normalizedIds,
           exerciseCount: normalizedIds.length,
+          durationMinutes: parseDurationMinutesFromName(r.name),
           favoritesCount: countMap.get(r.id) || 0,
           isFavorite: true,
         };
