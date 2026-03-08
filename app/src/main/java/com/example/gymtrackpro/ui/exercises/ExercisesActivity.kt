@@ -8,8 +8,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.gymtrackpro.R
 import com.example.gymtrackpro.databinding.ActivityExercisesBinding
 import com.example.gymtrackpro.ui.adapters.ExerciseAdapter
+import com.example.gymtrackpro.ui.navigation.MainBottomNav
 import com.example.gymtrackpro.utils.AppProvider
 import com.example.gymtrackpro.utils.ViewModelFactory
 
@@ -44,6 +46,7 @@ class ExercisesActivity : AppCompatActivity() {
         b.rvExercises.layoutManager = LinearLayoutManager(this)
         b.rvExercises.setHasFixedSize(true)
         b.rvExercises.adapter = adapter
+        MainBottomNav.bind(this, b.bottomNav, R.id.nav_exercises)
         val lm = b.rvExercises.layoutManager as LinearLayoutManager
         b.rvExercises.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -55,7 +58,6 @@ class ExercisesActivity : AppCompatActivity() {
         })
 
         b.etSearch.addTextChangedListener { vm.onQueryChanged(it?.toString().orEmpty()) }
-        b.btnHome.setOnClickListener { finish() }
 
         vm.exercises.observe(this) { items ->
             currentItemsCount = items.size
@@ -74,5 +76,10 @@ class ExercisesActivity : AppCompatActivity() {
         vm.error.observe(this) { b.tvError.text = it ?: "" }
 
         vm.loadExercises()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        MainBottomNav.syncSelection(b.bottomNav, R.id.nav_exercises)
     }
 }

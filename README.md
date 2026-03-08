@@ -21,6 +21,63 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 12:xx - Bottom Hub Selected State Sync - `fix`
+
+- Resumen: se corrige bug visual donde el tab resaltado del hub inferior quedaba en pantalla previa al volver o reusar Activities.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/navigation/MainBottomNav.kt` -> nuevo `syncSelection(...)` para marcar tab sin disparar navegacion.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> sincronizacion de tab en `onResume`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> sincronizacion de tab en `onResume`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt` -> sincronizacion de tab en `onResume`.
+- Motivo:
+  - El estado visual del menu inferior podia quedar desfasado al reutilizar Activities desde back stack.
+- Impacto:
+  - El tab activo siempre coincide con la pantalla visible.
+- Verificacion:
+  - Revision de flujo de estado en `onResume` completada.
+  - Prueba funcional en dispositivo pendiente.
+
+---
+
+### 2026-03-08 12:xx - Bottom Hub Transition Smoothing - `fix`
+
+- Resumen: se elimina animacion visible al cambiar entre tabs del hub inferior para que la barra se perciba estable.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/navigation/MainBottomNav.kt` -> navegacion con `FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP` y `overridePendingTransition(0, 0)`.
+- Motivo:
+  - El cambio entre pantallas principales mostraba animacion de Activity, rompiendo la sensacion de hub fijo.
+- Impacto:
+  - Navegacion mas fluida y sin transicion lateral/vertical entre Home, Ejercicios y tercer tab.
+- Verificacion:
+  - Revision de flujo de intents completada.
+  - Prueba visual pendiente en dispositivo.
+
+---
+
+### 2026-03-08 11:xx - Main Navigation Hub - `feat`
+
+- Resumen: se implementa hub de navegacion inferior fijo para pantallas principales (Home, Ejercicios y tercer modulo placeholder).
+- Archivos modificados:
+  - `app/src/main/res/menu/main_bottom_nav.xml` -> nuevo menu de navegacion inferior (`Home`, `Ejercicios`, `Proximo`).
+  - `app/src/main/java/com/example/gymtrackpro/ui/navigation/MainBottomNav.kt` -> helper central para bind y navegacion entre actividades principales.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> integra `BottomNavigationView` y elimina boton dedicado de ir a ejercicios.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> integra `BottomNavigationView` y elimina boton `Home` redundante.
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt` -> nueva tercera pantalla placeholder para futuro modulo.
+  - `app/src/main/res/layout/activity_home.xml` -> agrega `BottomNavigationView` fijo inferior y ajusta constraints.
+  - `app/src/main/res/layout/activity_exercises.xml` -> agrega `BottomNavigationView` fijo inferior y ajusta constraints.
+  - `app/src/main/res/layout/activity_third_hub.xml` -> nuevo layout de pantalla placeholder con nav inferior.
+  - `app/src/main/AndroidManifest.xml` -> registro de `ThirdHubActivity`.
+- Motivo:
+  - Unificar navegacion principal y eliminar botones de cambio de pantalla redundantes.
+- Impacto:
+  - La barra inferior queda visible en Home y Ejercicios.
+  - Tercer tab queda preparado para el modulo que se definira despues.
+- Verificacion:
+  - Revision de IDs de menu, binding y rutas de actividades completada.
+  - Build final pendiente en Android Studio local.
+
+---
+
 ### 2026-03-08 10:xx - Routine Detail Screen - `feat`
 
 - Resumen: desde Home, al tocar una rutina se abre una pantalla con los ejercicios añadidos a esa rutina.

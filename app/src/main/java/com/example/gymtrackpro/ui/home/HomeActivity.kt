@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.gymtrackpro.R
 import com.example.gymtrackpro.databinding.ActivityHomeBinding
 import com.example.gymtrackpro.ui.adapters.RoutineAdapter
-import com.example.gymtrackpro.ui.exercises.ExercisesActivity
+import com.example.gymtrackpro.ui.navigation.MainBottomNav
 import com.example.gymtrackpro.ui.routines.RoutineDetailActivity
 import com.example.gymtrackpro.utils.AppProvider
 import com.example.gymtrackpro.utils.ViewModelFactory
@@ -37,10 +37,7 @@ class HomeActivity : AppCompatActivity() {
         setContentView(b.root)
 
         b.rvExercises.adapter = adapter
-
-        b.btnOpenExercises.setOnClickListener {
-            startActivity(Intent(this, ExercisesActivity::class.java))
-        }
+        MainBottomNav.bind(this, b.bottomNav, R.id.nav_home)
 
         b.btnAddRoutine.setOnClickListener {
             openCreateRoutineDialog()
@@ -61,6 +58,11 @@ class HomeActivity : AppCompatActivity() {
         }
 
         vm.syncData()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        MainBottomNav.syncSelection(b.bottomNav, R.id.nav_home)
     }
 
     private fun openCreateRoutineDialog() {
