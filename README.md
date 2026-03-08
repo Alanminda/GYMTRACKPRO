@@ -21,6 +21,26 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-07 18:xx - Exercise Media + Material 3 UI - `feat`
+
+- Resumen: se robustece carga de GIF/imagen de ejercicios y se moderniza la interfaz de lista con componentes Material Design 3.
+- Archivos modificados:
+  - `backend/index.js` -> `mapExerciseDto` ahora contempla mas variantes de media (`gifUrl`, `gif_url`, `image`, `imageUrl`) y debug incluye muestra de GIF (`sampleHasGif`, `sampleGifUrl`).
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> carga de media con Glide usando URL normalizada (http->https) y fallback de render estandar.
+  - `app/src/main/res/layout/activity_exercises.xml` -> buscador migrado a `TextInputLayout`/`TextInputEditText` y boton Material 3 tonal.
+  - `app/src/main/res/layout/item_exercise.xml` -> tarjetas migradas a `MaterialCardView` con mejor jerarquia visual.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> `RecyclerView` optimizado con `setHasFixedSize(true)`.
+- Motivo:
+  - Los GIF no se mostraban en algunos casos por variacion de campo/URL en proveedor externo y se solicitaba actualizar visual a enfoque moderno Material 3.
+- Impacto:
+  - Mayor probabilidad de visualizar media de ejercicios.
+  - Interfaz mas moderna y consistente con Material Design 3.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion visual/funcional de GIF pendiente en dispositivo tras reinicio backend.
+
+---
+
 ### 2026-03-07 17:xx - Exercise Detail Screen - `feat`
 
 - Resumen: al tocar una tarjeta de ejercicio se abre una nueva pantalla con toda la informacion disponible, incluyendo GIF/imagen cuando la API lo entrega.

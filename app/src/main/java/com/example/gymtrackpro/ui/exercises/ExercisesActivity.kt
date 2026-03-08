@@ -41,6 +41,7 @@ class ExercisesActivity : AppCompatActivity() {
         setContentView(b.root)
 
         b.rvExercises.layoutManager = LinearLayoutManager(this)
+        b.rvExercises.setHasFixedSize(true)
         b.rvExercises.adapter = adapter
         val lm = b.rvExercises.layoutManager as LinearLayoutManager
         b.rvExercises.addOnScrollListener(object : RecyclerView.OnScrollListener() {
