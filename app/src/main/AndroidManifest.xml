@@ -30,6 +30,10 @@
         <activity
             android:name=".ui.exercises.ExercisesActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.exercises.ExerciseDetailActivity"
+            android:exported="false" />
             
         <activity
             android:name=".MainActivity"

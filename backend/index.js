@@ -57,10 +57,13 @@ function mapExerciseDto(item) {
   return {
     id,
     name: item.name,
+    gifUrl: item.gifUrl || item.gif_url || null,
     bodyPart: item.bodyPart || null,
     equipment: item.equipment || null,
     target: item.target || null,
     muscleGroup: item.muscleGroup || item.target || null,
+    secondaryMuscles: Array.isArray(item.secondaryMuscles) ? item.secondaryMuscles : [],
+    instructions: Array.isArray(item.instructions) ? item.instructions : [],
   };
 }
 

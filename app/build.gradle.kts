@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.okhttp.logging)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
     
     // Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx)

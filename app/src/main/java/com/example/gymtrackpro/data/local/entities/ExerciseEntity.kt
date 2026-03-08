@@ -8,7 +8,10 @@ data class ExerciseEntity(
     @PrimaryKey val id: String, // para poder guardar el _id de Mongo
     val name: String,
     val muscleGroup: String,
+    val gifUrl: String? = null,
     val bodyPart: String? = null,
     val equipment: String? = null,
-    val target: String? = null
+    val target: String? = null,
+    val secondaryMuscles: String? = null,
+    val instructions: String? = null
 )

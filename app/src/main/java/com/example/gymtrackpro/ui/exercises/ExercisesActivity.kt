@@ -1,5 +1,6 @@
 package com.example.gymtrackpro.ui.exercises
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
@@ -20,7 +21,19 @@ class ExercisesActivity : AppCompatActivity() {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
 
-    private val adapter = ExerciseAdapter()
+    private val adapter = ExerciseAdapter { exercise ->
+        startActivity(Intent(this, ExerciseDetailActivity::class.java).apply {
+            putExtra(ExerciseDetailActivity.EXTRA_NAME, exercise.name)
+            putExtra(ExerciseDetailActivity.EXTRA_MUSCLE_GROUP, exercise.muscleGroup)
+            putExtra(ExerciseDetailActivity.EXTRA_BODY_PART, exercise.bodyPart)
+            putExtra(ExerciseDetailActivity.EXTRA_EQUIPMENT, exercise.equipment)
+            putExtra(ExerciseDetailActivity.EXTRA_TARGET, exercise.target)
+            putExtra(ExerciseDetailActivity.EXTRA_GIF_URL, exercise.gifUrl)
+            putExtra(ExerciseDetailActivity.EXTRA_SECONDARY_MUSCLES, exercise.secondaryMuscles)
+            putExtra(ExerciseDetailActivity.EXTRA_INSTRUCTIONS, exercise.instructions)
+        })
+    }
+    private var currentItemsCount: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +56,7 @@ class ExercisesActivity : AppCompatActivity() {
         b.btnHome.setOnClickListener { finish() }
 
         vm.exercises.observe(this) { items ->
+            currentItemsCount = items.size
             adapter.submit(items)
             b.tvEmptyExercises.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             b.rvExercises.post {
@@ -51,7 +65,10 @@ class ExercisesActivity : AppCompatActivity() {
                 }
             }
         }
-        vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
+        vm.loading.observe(this) { isLoading ->
+            b.progressInitial.visibility = if (isLoading && currentItemsCount == 0) View.VISIBLE else View.GONE
+            b.progressPaging.visibility = if (isLoading && currentItemsCount > 0) View.VISIBLE else View.GONE
+        }
         vm.error.observe(this) { b.tvError.text = it ?: "" }
 
         vm.loadExercises()
