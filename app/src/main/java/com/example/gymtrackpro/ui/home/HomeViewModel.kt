@@ -26,7 +26,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
             _loading.value = true
             _error.value = null
             try {
-                repo.syncAllPending()
+                repo.syncForLoggedUser()
             } catch (e: Exception) {
                 _error.value = "Error al sincronizar"
             } finally {
@@ -47,11 +47,23 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
         viewModelScope.launch {
             _loading.value = true
             try {
-                // Actualmente la tabla remota guarda 'name'; el tiempo se serializa en el nombre.
                 repo.createRoutine("$cleanName (${cleanTime} min)")
-                repo.syncPendingRoutines()
-                _routineMessage.value = "Rutina creada"
-            } catch (e: Exception) {
+                val loggedIn = repo.isLoggedIn()
+                if (!loggedIn) {
+                    _routineMessage.value = "Rutina creada en local (modo invitado)"
+                } else {
+                    try {
+                        repo.syncForLoggedUser()
+                        _routineMessage.value = if (repo.hasPendingRoutineSync()) {
+                            "Rutina creada local; sync pendiente"
+                        } else {
+                            "Rutina creada y sincronizada"
+                        }
+                    } catch (_: Exception) {
+                        _routineMessage.value = "Rutina creada local; sync pendiente"
+                    }
+                }
+            } catch (_: Exception) {
                 _routineMessage.value = "No se pudo crear rutina"
             } finally {
                 _loading.value = false

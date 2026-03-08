@@ -73,7 +73,7 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
             try {
                 val page = repo.fetchExercisesPageFromApi(
                     query = query.takeIf { it.isNotBlank() },
-                    limit = PAGE_SIZE,
+                    limit = currentPageSize(),
                     offset = offset
                 )
 
@@ -100,6 +100,11 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     companion object {
-        private const val PAGE_SIZE = 50
+        private const val INITIAL_PAGE_SIZE = 10
+        private const val NEXT_PAGE_SIZE = 50
+    }
+
+    private fun currentPageSize(): Int {
+        return if (offset == 0) INITIAL_PAGE_SIZE else NEXT_PAGE_SIZE
     }
 }
