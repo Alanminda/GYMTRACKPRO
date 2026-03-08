@@ -7,19 +7,25 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RoutineDao {
 
-    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'OWN' ORDER BY updatedAt DESC")
     fun observeActiveByUser(userId: Int): Flow<List<RoutineEntity>>
 
-    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'OWN' ORDER BY updatedAt DESC")
     suspend fun getActiveByUser(userId: Int): List<RoutineEntity>
+
+    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = :routineType ORDER BY updatedAt DESC")
+    fun observeByType(userId: Int, routineType: String): Flow<List<RoutineEntity>>
 
     @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): RoutineEntity?
 
-    @Query("SELECT * FROM routines WHERE remoteId = :remoteId LIMIT 1")
+    @Query("SELECT * FROM routines WHERE remoteId = :remoteId AND routineType = 'OWN' LIMIT 1")
     suspend fun getByRemoteId(remoteId: String): RoutineEntity?
 
-    @Query("SELECT * FROM routines WHERE syncState != 'SYNCED' OR deleted = 1")
+    @Query("SELECT * FROM routines WHERE publicRoutineId = :publicRoutineId AND routineType = 'FAVORITE' LIMIT 1")
+    suspend fun getByPublicRoutineId(publicRoutineId: String): RoutineEntity?
+
+    @Query("SELECT * FROM routines WHERE routineType = 'OWN' AND (syncState != 'SYNCED' OR deleted = 1)")
     suspend fun getPendingSync(): List<RoutineEntity>
 
     @Insert
@@ -39,4 +45,7 @@ interface RoutineDao {
 
     @Query("UPDATE routines SET syncState = 'PENDING_UPSERT', deleted = 0, updatedAt = :updatedAt WHERE id = :id")
     suspend fun markPendingUpsert(id: Int, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'FAVORITE' ORDER BY updatedAt DESC")
+    suspend fun getFavoritesByUser(userId: Int): List<RoutineEntity>
 }

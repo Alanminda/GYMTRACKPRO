@@ -2,6 +2,7 @@ package com.example.gymtrackpro.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -42,7 +43,15 @@ class RoutineAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = getItem(position)
         holder.b.tvName.text = item.name
-        holder.b.tvGroup.text = "Rutina"
+        if (item.routineType == "FAVORITE") {
+            holder.b.tvGroup.text = "Favorita de ${item.ownerName ?: "Comunidad"}"
+            holder.b.foregroundContainer.strokeColor =
+                ContextCompat.getColor(holder.b.root.context, android.R.color.holo_orange_dark)
+        } else {
+            holder.b.tvGroup.text = "Rutina propia"
+            holder.b.foregroundContainer.strokeColor =
+                ContextCompat.getColor(holder.b.root.context, android.R.color.holo_green_dark)
+        }
         holder.b.foregroundContainer.translationX = if (openedPosition == position) -revealWidthPx else 0f
 
         holder.b.foregroundContainer.setOnClickListener {
@@ -74,6 +83,7 @@ class RoutineAdapter(
     }
 
     fun submit(items: List<RoutineEntity>) = submitList(items)
+    fun getItemAt(position: Int): RoutineEntity? = currentList.getOrNull(position)
 
     fun isActionsOpen(position: Int): Boolean = openedPosition == position
 
@@ -89,5 +99,10 @@ class RoutineAdapter(
         val previous = openedPosition
         openedPosition = NO_POSITION
         notifyItemChanged(previous, PAYLOAD_ACTION_STATE)
+    }
+
+    fun resetSwipe(position: Int) {
+        if (position == NO_POSITION) return
+        notifyItemChanged(position, PAYLOAD_ACTION_STATE)
     }
 }

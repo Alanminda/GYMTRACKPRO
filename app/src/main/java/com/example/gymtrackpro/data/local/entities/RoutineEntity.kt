@@ -17,6 +17,9 @@ import androidx.room.*
 data class RoutineEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val remoteId: String? = null,
+    val publicRoutineId: String? = null,
+    val routineType: String = "OWN",
+    val ownerName: String? = null,
     val name: String,
     val userId: Int,
     val syncState: String = "PENDING_UPSERT",

@@ -122,6 +122,7 @@ class GymRepository(
     }
 
     fun observeRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeActiveByUser(userId)
+    fun observeFavoriteRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeByType(userId, "FAVORITE")
     suspend fun getRoutinesLocal(userId: Int = 1): List<RoutineEntity> = routineDao.getActiveByUser(userId)
     suspend fun hasPendingRoutineSync(): Boolean = routineDao.getPendingSync().isNotEmpty()
 
@@ -147,12 +148,13 @@ class GymRepository(
     }
 
     suspend fun createRoutine(name: String, userId: Int = 1): Int {
-        val routine = RoutineEntity(name = name, userId = userId)
+        val routine = RoutineEntity(name = name, userId = userId, routineType = "OWN")
         return routineDao.insert(routine).toInt()
     }
 
     suspend fun renameRoutine(routineId: Int, newName: String) {
         val current = routineDao.getById(routineId) ?: return
+        if (current.routineType != "OWN") return
         routineDao.update(
             current.copy(
                 name = newName,
@@ -165,6 +167,20 @@ class GymRepository(
 
     suspend fun deleteRoutine(routineId: Int) {
         val current = routineDao.getById(routineId) ?: return
+        if (current.routineType == "FAVORITE") {
+            if (isLoggedIn() && !current.publicRoutineId.isNullOrBlank()) {
+                val session = userDao.getSession()
+                if (session != null) {
+                    api.unfavoriteCommunityRoutine(
+                        bearer = "Bearer ${session.token}",
+                        id = current.publicRoutineId
+                    )
+                }
+            }
+            routineExerciseDao.hardDeleteByRoutine(routineId)
+            routineDao.hardDelete(routineId)
+            return
+        }
         if (current.remoteId.isNullOrBlank()) {
             routineExerciseDao.hardDeleteByRoutine(routineId)
             routineDao.hardDelete(routineId)
@@ -184,7 +200,7 @@ class GymRepository(
             )
         )
         val routine = routineDao.getById(routineId)
-        if (routine != null && !routine.deleted) {
+        if (routine != null && !routine.deleted && routine.routineType == "OWN") {
             routineDao.markPendingUpsert(routineId)
         }
     }
@@ -196,7 +212,7 @@ class GymRepository(
             updatedAt = System.currentTimeMillis()
         )
         val routine = routineDao.getById(routineId)
-        if (routine != null && !routine.deleted) {
+        if (routine != null && !routine.deleted && routine.routineType == "OWN") {
             routineDao.markPendingUpsert(routineId)
         }
     }
@@ -249,6 +265,7 @@ class GymRepository(
         if (!isLoggedIn()) return
         syncAllPending()
         pullRemoteRoutinesToLocal()
+        pullFavoriteCommunityRoutinesToLocal()
     }
 
     private suspend fun pullRemoteRoutinesToLocal() {
@@ -264,6 +281,7 @@ class GymRepository(
                     RoutineEntity(
                         remoteId = remote._id,
                         name = remote.name,
+                        routineType = "OWN",
                         userId = 1,
                         syncState = "SYNCED",
                         deleted = false,
@@ -274,6 +292,7 @@ class GymRepository(
                 routineDao.update(
                     existing.copy(
                         name = remote.name,
+                        routineType = "OWN",
                         syncState = "SYNCED",
                         deleted = false,
                         updatedAt = System.currentTimeMillis()
@@ -322,6 +341,112 @@ class GymRepository(
         }
     }
 
+    suspend fun shareRoutine(routineId: Int) {
+        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
+        val routine = routineDao.getById(routineId) ?: throw IllegalStateException("Rutina no encontrada")
+        if (routine.routineType != "OWN") throw IllegalStateException("Solo se comparten rutinas propias")
+        val remoteId = routine.remoteId ?: throw IllegalStateException("Rutina aun no sincronizada")
+
+        api.shareRoutine(
+            bearer = "Bearer ${session.token}",
+            id = remoteId
+        )
+    }
+
+    suspend fun fetchCommunityRoutinesPage(limit: Int, offset: Int): List<CommunityRoutineDto> {
+        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
+        return api.getCommunityRoutines(
+            bearer = "Bearer ${session.token}",
+            limit = limit,
+            offset = offset
+        )
+    }
+
+    suspend fun setCommunityRoutineFavorite(publicRoutineId: String, favorite: Boolean) {
+        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
+        val bearer = "Bearer ${session.token}"
+        val resp = if (favorite) {
+            api.favoriteCommunityRoutine(bearer = bearer, id = publicRoutineId)
+        } else {
+            api.unfavoriteCommunityRoutine(bearer = bearer, id = publicRoutineId)
+        }
+        if (!resp.isSuccessful) throw IllegalStateException("No se pudo actualizar favorito")
+        pullFavoriteCommunityRoutinesToLocal()
+    }
+
+    private suspend fun pullFavoriteCommunityRoutinesToLocal() {
+        val session = userDao.getSession() ?: return
+        val favoriteRemote = api.getCommunityFavorites("Bearer ${session.token}")
+
+        val localFavorite = routineDao.getFavoritesByUser(userId = 1)
+        val localByPublicId = localFavorite.associateBy { it.publicRoutineId }
+        val incomingIds = favoriteRemote.map { it.id }.toSet()
+
+        for (local in localFavorite) {
+            if (local.publicRoutineId !in incomingIds) {
+                routineExerciseDao.hardDeleteByRoutine(local.id)
+                routineDao.hardDelete(local.id)
+            }
+        }
+
+        val allExerciseIds = linkedSetOf<String>()
+        for (remote in favoriteRemote) {
+            val existing = localByPublicId[remote.id]
+            val localId = if (existing == null) {
+                routineDao.insert(
+                    RoutineEntity(
+                        publicRoutineId = remote.id,
+                        routineType = "FAVORITE",
+                        ownerName = remote.ownerName,
+                        name = remote.name,
+                        userId = 1,
+                        syncState = "SYNCED",
+                        deleted = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                ).toInt()
+            } else {
+                routineDao.update(
+                    existing.copy(
+                        name = remote.name,
+                        ownerName = remote.ownerName,
+                        routineType = "FAVORITE",
+                        syncState = "SYNCED",
+                        deleted = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+                existing.id
+            }
+
+            routineExerciseDao.hardDeleteByRoutine(localId)
+            remote.exerciseIds.distinct().forEach { exerciseId ->
+                allExerciseIds.add(exerciseId)
+                routineExerciseDao.upsert(
+                    RoutineExerciseEntity(
+                        routineId = localId,
+                        exerciseId = exerciseId,
+                        syncState = "SYNCED",
+                        deleted = false,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+            }
+        }
+
+        if (allExerciseIds.isNotEmpty()) {
+            val localExerciseIds = exerciseDao.getByIds(allExerciseIds.toList()).map { it.id }.toSet()
+            val missing = allExerciseIds.filter { it !in localExerciseIds }
+            for (exerciseId in missing) {
+                try {
+                    fetchExerciseDetailFromApi(exerciseId)
+                } catch (_: Exception) {
+                    // No bloquear sync por un ejercicio puntual.
+                }
+            }
+        }
+    }
+
     private suspend fun ensureRoutinePendingFromRoutineExerciseChanges() {
         val pendingRoutineIds = routineExerciseDao.getPendingSync()
             .map { it.routineId }
@@ -329,7 +454,7 @@ class GymRepository(
 
         for (routineId in pendingRoutineIds) {
             val routine = routineDao.getById(routineId) ?: continue
-            if (!routine.deleted) {
+            if (!routine.deleted && routine.routineType == "OWN") {
                 routineDao.markPendingUpsert(routineId)
             }
         }

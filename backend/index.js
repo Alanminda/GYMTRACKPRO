@@ -558,6 +558,221 @@ app.put("/routines/:id/exercises", auth, async (req, res) => {
   }
 });
 
+app.post("/routines/:id/share", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: routine, error: routineError } = await supabase
+      .from("routines")
+      .select("id,name,exercise_ids")
+      .eq("id", id)
+      .eq("user_id", req.user.userId)
+      .maybeSingle();
+
+    if (routineError) return res.status(500).json({ message: "Error al compartir rutina" });
+    if (!routine) return res.status(404).json({ message: "Rutina no encontrada" });
+
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", req.user.userId)
+      .maybeSingle();
+    if (userError) return res.status(500).json({ message: "Error al compartir rutina" });
+
+    const payload = {
+      routine_id: routine.id,
+      owner_user_id: req.user.userId,
+      owner_name: user?.name || "Usuario",
+      name: routine.name,
+      exercise_ids: routine.exercise_ids || [],
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: existing, error: existingError } = await supabase
+      .from("public_routines")
+      .select("id")
+      .eq("routine_id", routine.id)
+      .eq("owner_user_id", req.user.userId)
+      .maybeSingle();
+    if (existingError) return res.status(500).json({ message: "Error al compartir rutina" });
+
+    let shared;
+    if (existing?.id) {
+      const { data, error } = await supabase
+        .from("public_routines")
+        .update(payload)
+        .eq("id", existing.id)
+        .select("id,name,owner_name,exercise_ids")
+        .single();
+      if (error || !data) return res.status(500).json({ message: "Error al compartir rutina" });
+      shared = data;
+    } else {
+      const { data, error } = await supabase
+        .from("public_routines")
+        .insert(payload)
+        .select("id,name,owner_name,exercise_ids")
+        .single();
+      if (error || !data) return res.status(500).json({ message: "Error al compartir rutina" });
+      shared = data;
+    }
+
+    return res.status(201).json({
+      id: shared.id,
+      name: shared.name,
+      ownerName: shared.owner_name || "Usuario",
+      exerciseIds: shared.exercise_ids || [],
+      isFavorite: false,
+      favoritesCount: 0,
+    });
+  } catch {
+    return res.status(500).json({ message: "Error al compartir rutina" });
+  }
+});
+
+app.get("/community/routines", auth, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+    const from = offset;
+    const to = offset + limit - 1;
+
+    const { data: routines, error } = await supabase
+      .from("public_routines")
+      .select("id,name,owner_name,exercise_ids,updated_at")
+      .order("updated_at", { ascending: false })
+      .range(from, to);
+    if (error) return res.status(500).json({ message: "Error al obtener comunidad" });
+
+    const ids = (routines || []).map((r) => r.id);
+    let favoritesByRoutineId = new Map();
+    let favoriteIdsByUser = new Set();
+
+    if (ids.length > 0) {
+      const { data: favs, error: favError } = await supabase
+        .from("public_routine_favorites")
+        .select("public_routine_id,user_id")
+        .in("public_routine_id", ids);
+      if (favError) return res.status(500).json({ message: "Error al obtener favoritos" });
+
+      const countMap = new Map();
+      for (const row of favs || []) {
+        const key = row.public_routine_id;
+        countMap.set(key, (countMap.get(key) || 0) + 1);
+        if (row.user_id === req.user.userId) {
+          favoriteIdsByUser.add(key);
+        }
+      }
+      favoritesByRoutineId = countMap;
+    }
+
+    return res.json(
+      (routines || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        ownerName: r.owner_name || "Usuario",
+        exerciseIds: r.exercise_ids || [],
+        favoritesCount: favoritesByRoutineId.get(r.id) || 0,
+        isFavorite: favoriteIdsByUser.has(r.id),
+      }))
+    );
+  } catch {
+    return res.status(500).json({ message: "Error al obtener comunidad" });
+  }
+});
+
+app.post("/community/routines/:id/favorite", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data: exists, error: existsError } = await supabase
+      .from("public_routines")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+    if (existsError) return res.status(500).json({ message: "Error al marcar favorito" });
+    if (!exists) return res.status(404).json({ message: "Rutina publica no encontrada" });
+
+    const { data: already, error: alreadyError } = await supabase
+      .from("public_routine_favorites")
+      .select("id")
+      .eq("public_routine_id", id)
+      .eq("user_id", req.user.userId)
+      .maybeSingle();
+    if (alreadyError) return res.status(500).json({ message: "Error al marcar favorito" });
+
+    if (!already) {
+      const { error: insertError } = await supabase.from("public_routine_favorites").insert({
+        public_routine_id: id,
+        user_id: req.user.userId,
+      });
+      if (insertError) return res.status(500).json({ message: "Error al marcar favorito" });
+    }
+
+    return res.status(200).json({ message: "Favorito agregado" });
+  } catch {
+    return res.status(500).json({ message: "Error al marcar favorito" });
+  }
+});
+
+app.delete("/community/routines/:id/favorite", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from("public_routine_favorites")
+      .delete()
+      .eq("public_routine_id", id)
+      .eq("user_id", req.user.userId);
+    if (error) return res.status(500).json({ message: "Error al quitar favorito" });
+    return res.status(204).send();
+  } catch {
+    return res.status(500).json({ message: "Error al quitar favorito" });
+  }
+});
+
+app.get("/community/favorites", auth, async (req, res) => {
+  try {
+    const { data: favRows, error: favError } = await supabase
+      .from("public_routine_favorites")
+      .select("public_routine_id")
+      .eq("user_id", req.user.userId);
+    if (favError) return res.status(500).json({ message: "Error al obtener favoritos" });
+
+    const ids = [...new Set((favRows || []).map((row) => row.public_routine_id).filter(Boolean))];
+    if (ids.length === 0) return res.json([]);
+
+    const { data: routines, error: routinesError } = await supabase
+      .from("public_routines")
+      .select("id,name,owner_name,exercise_ids,updated_at")
+      .in("id", ids)
+      .order("updated_at", { ascending: false });
+    if (routinesError) return res.status(500).json({ message: "Error al obtener favoritos" });
+
+    const { data: countsRows, error: countsError } = await supabase
+      .from("public_routine_favorites")
+      .select("public_routine_id")
+      .in("public_routine_id", ids);
+    if (countsError) return res.status(500).json({ message: "Error al obtener favoritos" });
+
+    const countMap = new Map();
+    for (const row of countsRows || []) {
+      const key = row.public_routine_id;
+      countMap.set(key, (countMap.get(key) || 0) + 1);
+    }
+
+    return res.json(
+      (routines || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        ownerName: r.owner_name || "Usuario",
+        exerciseIds: r.exercise_ids || [],
+        favoritesCount: countMap.get(r.id) || 0,
+        isFavorite: true,
+      }))
+    );
+  } catch {
+    return res.status(500).json({ message: "Error al obtener favoritos" });
+  }
+});
+
 app.post("/progress", auth, async (req, res) => {
   try {
     const { dateIso, weight, note } = req.body;

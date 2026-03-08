@@ -17,7 +17,7 @@ import com.example.gymtrackpro.data.local.entities.*
         RoutineExerciseEntity::class,
         ProgressEntity::class
     ],
-    version = 3
+    version = 4
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userLocalDao(): UserLocalDao

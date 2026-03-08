@@ -13,3 +13,12 @@ data class RoutineRemoteDto(
     val name: String,
     val exerciseIds: List<String> = emptyList()
 )
+
+data class CommunityRoutineDto(
+    val id: String,
+    val name: String,
+    val ownerName: String,
+    val exerciseIds: List<String> = emptyList(),
+    val favoritesCount: Int = 0,
+    val isFavorite: Boolean = false
+)

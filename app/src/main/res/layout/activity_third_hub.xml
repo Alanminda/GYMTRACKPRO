@@ -6,16 +6,68 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/tvPlaceholder"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Tercera pantalla: proximo modulo"
-        android:textColor="#666666"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        android:text="Comunidad"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCommunity"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toTopOf="@id/tvError"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No hay rutinas compartidas"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="@id/rvCommunity"
+        app:layout_constraintEnd_toEndOf="@id/rvCommunity"
+        app:layout_constraintStart_toStartOf="@id/rvCommunity"
+        app:layout_constraintTop_toTopOf="@id/rvCommunity" />
+
+    <ProgressBar
+        android:id="@+id/progressInitial"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rvCommunity"
+        app:layout_constraintEnd_toEndOf="@id/rvCommunity"
+        app:layout_constraintStart_toStartOf="@id/rvCommunity"
+        app:layout_constraintTop_toTopOf="@id/rvCommunity" />
+
+    <ProgressBar
+        android:id="@+id/progressPaging"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rvCommunity"
+        app:layout_constraintEnd_toEndOf="@id/rvCommunity"
+        app:layout_constraintStart_toStartOf="@id/rvCommunity" />
+
+    <TextView
+        android:id="@+id/tvError"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="?attr/colorError"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rvCommunity" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"

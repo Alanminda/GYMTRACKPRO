@@ -33,13 +33,14 @@ class HomeActivity : AppCompatActivity() {
             startActivity(Intent(this, RoutineDetailActivity::class.java).apply {
                 putExtra(RoutineDetailActivity.EXTRA_ROUTINE_ID, routine.id)
                 putExtra(RoutineDetailActivity.EXTRA_ROUTINE_NAME, routine.name)
+                putExtra(RoutineDetailActivity.EXTRA_ROUTINE_TYPE, routine.routineType)
             })
         },
         onDelete = { routine ->
             confirmDeleteRoutine(routine)
         },
-        onShare = { _ ->
-            Toast.makeText(this, "Compartir: pendiente", Toast.LENGTH_SHORT).show()
+        onShare = { routine ->
+            vm.shareRoutine(routine.id)
         }
     )
 
@@ -52,6 +53,9 @@ class HomeActivity : AppCompatActivity() {
         (b.rvExercises.itemAnimator as? DefaultItemAnimator)?.supportsChangeAnimations = false
         attachRoutineSwipeActions()
         MainBottomNav.bind(this, b.bottomNav, R.id.nav_home)
+        b.toggleRoutineCategory.check(R.id.btnCategoryOwn)
+        b.btnCategoryOwn.setOnClickListener { vm.setCategory(HomeViewModel.RoutineCategory.OWN) }
+        b.btnCategoryFavorite.setOnClickListener { vm.setCategory(HomeViewModel.RoutineCategory.FAVORITES) }
 
         b.btnAddRoutine.setOnClickListener {
             openCreateRoutineDialog()
@@ -60,6 +64,15 @@ class HomeActivity : AppCompatActivity() {
         vm.routines.observe(this) { routines ->
             adapter.submit(routines)
             b.tvEmptyRoutines.visibility = if (routines.isEmpty()) View.VISIBLE else View.GONE
+        }
+        vm.category.observe(this) { category ->
+            b.btnAddRoutine.visibility = if (category == HomeViewModel.RoutineCategory.OWN) View.VISIBLE else View.GONE
+            b.tvEmptyRoutines.text = if (category == HomeViewModel.RoutineCategory.OWN) {
+                "No hay rutinas propias"
+            } else {
+                "No hay favoritas de la comunidad"
+            }
+            adapter.closeActions()
         }
 
         vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
@@ -85,6 +98,12 @@ class HomeActivity : AppCompatActivity() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val pos = viewHolder.bindingAdapterPosition
                 if (pos == RecyclerView.NO_POSITION) return
+                val routine = adapter.getItemAt(pos) ?: return
+                if (routine.routineType != "OWN") {
+                    adapter.closeActions()
+                    adapter.resetSwipe(pos)
+                    return
+                }
                 if (direction == ItemTouchHelper.LEFT) {
                     adapter.toggleActions(pos)
                 } else {
@@ -108,6 +127,11 @@ class HomeActivity : AppCompatActivity() {
 
                 val position = viewHolder.bindingAdapterPosition
                 if (position == RecyclerView.NO_POSITION) return
+                val routine = adapter.getItemAt(position)
+                if (routine?.routineType != "OWN") {
+                    viewHolder.b.foregroundContainer.translationX = 0f
+                    return
+                }
 
                 val maxReveal = adapter.revealWidthPx
                 val openOffset = if (adapter.isActionsOpen(position)) -maxReveal else 0f
