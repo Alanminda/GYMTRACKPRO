@@ -28,3 +28,5 @@ Thumbs.db
 # Backend local
 backend/node_modules/
 backend/.env
+backend/supabase-seed-dev.sql
+backend/supabase-seed-dev-real-30.sql

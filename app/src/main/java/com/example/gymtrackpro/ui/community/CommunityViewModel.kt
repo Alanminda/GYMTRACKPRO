@@ -64,18 +64,18 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 val newState = !item.isFavorite
-                repo.setCommunityRoutineFavorite(item.id, newState)
+                val remote = repo.setCommunityRoutineFavorite(item.id, newState)
                 _items.value = _items.value.orEmpty().map {
                     if (it.id == item.id) {
                         it.copy(
-                            isFavorite = newState,
-                            favoritesCount = (it.favoritesCount + if (newState) 1 else -1).coerceAtLeast(0)
+                            isFavorite = remote.isFavorite,
+                            favoritesCount = remote.favoritesCount
                         )
                     } else {
                         it
                     }
                 }
-                _message.value = if (newState) "Agregada a favoritas" else "Quitada de favoritas"
+                _message.value = if (remote.isFavorite) "Agregada a favoritas" else "Quitada de favoritas"
             } catch (_: Exception) {
                 _message.value = "No se pudo actualizar favorito"
             }

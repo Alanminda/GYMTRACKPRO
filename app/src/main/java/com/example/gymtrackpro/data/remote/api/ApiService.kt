@@ -72,13 +72,13 @@ interface ApiService {
     suspend fun favoriteCommunityRoutine(
         @Header("Authorization") bearer: String,
         @Path("id") id: String
-    ): Response<Unit>
+    ): Response<CommunityFavoriteToggleDto>
 
     @HTTP(method = "DELETE", path = "community/routines/{id}/favorite", hasBody = false)
     suspend fun unfavoriteCommunityRoutine(
         @Header("Authorization") bearer: String,
         @Path("id") id: String
-    ): Response<Unit>
+    ): Response<CommunityFavoriteToggleDto>
 
     @GET("community/favorites")
     suspend fun getCommunityFavorites(@Header("Authorization") bearer: String): List<CommunityRoutineDto>

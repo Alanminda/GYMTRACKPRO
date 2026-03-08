@@ -19,6 +19,13 @@ data class CommunityRoutineDto(
     val name: String,
     val ownerName: String,
     val exerciseIds: List<String> = emptyList(),
+    val exerciseCount: Int = 0,
+    val favoritesCount: Int = 0,
+    val isFavorite: Boolean = false
+)
+
+data class CommunityFavoriteToggleDto(
+    val message: String,
     val favoritesCount: Int = 0,
     val isFavorite: Boolean = false
 )

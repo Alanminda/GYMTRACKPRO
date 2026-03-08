@@ -578,12 +578,14 @@ app.post("/routines/:id/share", auth, async (req, res) => {
       .maybeSingle();
     if (userError) return res.status(500).json({ message: "Error al compartir rutina" });
 
+    const normalizedExerciseIds = [...new Set((routine.exercise_ids || []).map((e) => String(e).trim()).filter(Boolean))];
+
     const payload = {
       routine_id: routine.id,
       owner_user_id: req.user.userId,
       owner_name: user?.name || "Usuario",
       name: routine.name,
-      exercise_ids: routine.exercise_ids || [],
+      exercise_ids: normalizedExerciseIds,
       updated_at: new Date().toISOString(),
     };
 
@@ -619,7 +621,8 @@ app.post("/routines/:id/share", auth, async (req, res) => {
       id: shared.id,
       name: shared.name,
       ownerName: shared.owner_name || "Usuario",
-      exerciseIds: shared.exercise_ids || [],
+      exerciseIds: [...new Set(shared.exercise_ids || [])],
+      exerciseCount: [...new Set(shared.exercise_ids || [])].length,
       isFavorite: false,
       favoritesCount: 0,
     });
@@ -669,7 +672,8 @@ app.get("/community/routines", auth, async (req, res) => {
         id: r.id,
         name: r.name,
         ownerName: r.owner_name || "Usuario",
-        exerciseIds: r.exercise_ids || [],
+        exerciseIds: [...new Set(r.exercise_ids || [])],
+        exerciseCount: [...new Set(r.exercise_ids || [])].length,
         favoritesCount: favoritesByRoutineId.get(r.id) || 0,
         isFavorite: favoriteIdsByUser.has(r.id),
       }))
@@ -706,8 +710,13 @@ app.post("/community/routines/:id/favorite", auth, async (req, res) => {
       });
       if (insertError) return res.status(500).json({ message: "Error al marcar favorito" });
     }
+    const { count, error: countError } = await supabase
+      .from("public_routine_favorites")
+      .select("*", { count: "exact", head: true })
+      .eq("public_routine_id", id);
+    if (countError) return res.status(500).json({ message: "Error al marcar favorito" });
 
-    return res.status(200).json({ message: "Favorito agregado" });
+    return res.status(200).json({ message: "Favorito agregado", favoritesCount: count || 0, isFavorite: true });
   } catch {
     return res.status(500).json({ message: "Error al marcar favorito" });
   }
@@ -722,7 +731,12 @@ app.delete("/community/routines/:id/favorite", auth, async (req, res) => {
       .eq("public_routine_id", id)
       .eq("user_id", req.user.userId);
     if (error) return res.status(500).json({ message: "Error al quitar favorito" });
-    return res.status(204).send();
+    const { count, error: countError } = await supabase
+      .from("public_routine_favorites")
+      .select("*", { count: "exact", head: true })
+      .eq("public_routine_id", id);
+    if (countError) return res.status(500).json({ message: "Error al quitar favorito" });
+    return res.status(200).json({ message: "Favorito quitado", favoritesCount: count || 0, isFavorite: false });
   } catch {
     return res.status(500).json({ message: "Error al quitar favorito" });
   }
@@ -763,7 +777,8 @@ app.get("/community/favorites", auth, async (req, res) => {
         id: r.id,
         name: r.name,
         ownerName: r.owner_name || "Usuario",
-        exerciseIds: r.exercise_ids || [],
+        exerciseIds: [...new Set(r.exercise_ids || [])],
+        exerciseCount: [...new Set(r.exercise_ids || [])].length,
         favoritesCount: countMap.get(r.id) || 0,
         isFavorite: true,
       }))
