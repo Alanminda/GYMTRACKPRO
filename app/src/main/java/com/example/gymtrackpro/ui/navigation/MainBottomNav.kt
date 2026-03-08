@@ -6,6 +6,7 @@ import com.example.gymtrackpro.R
 import com.example.gymtrackpro.ui.exercises.ExercisesActivity
 import com.example.gymtrackpro.ui.home.HomeActivity
 import com.example.gymtrackpro.ui.placeholder.ThirdHubActivity
+import com.example.gymtrackpro.ui.profile.ProfileActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 object MainBottomNav {
@@ -44,6 +45,17 @@ object MainBottomNav {
                     if (selectedItemId != R.id.nav_third) {
                         activity.startActivity(
                             Intent(activity, ThirdHubActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            }
+                        )
+                        activity.overridePendingTransition(0, 0)
+                    }
+                    true
+                }
+                R.id.nav_profile -> {
+                    if (selectedItemId != R.id.nav_profile) {
+                        activity.startActivity(
+                            Intent(activity, ProfileActivity::class.java).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                             }
                         )
