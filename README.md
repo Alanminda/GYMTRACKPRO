@@ -21,6 +21,21 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-07 20:xx - GIF URL Fallback by Exercise ID - `fix`
+
+- Resumen: cuando ExerciseDB no devuelve `gifUrl`, el backend ahora construye una URL fallback por `id` para mantener vista de GIF en la app.
+- Archivos modificados:
+  - `backend/index.js` -> nueva funcion `normalizeGifUrl(url, id)` con fallback `https://d205bpvrqc9yn1.cloudfront.net/{id}.gif` para ids numericos.
+- Motivo:
+  - Se detectaron respuestas validas de ejercicio sin `gifUrl` (ej. `id=0001`) pese a tener resto de informacion.
+- Impacto:
+  - Mayor cobertura visual de GIF en detalle sin depender totalmente del campo remoto.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion funcional pendiente tras redeploy del backend.
+
+---
+
 ### 2026-03-07 19:xx - Exercise GIF Fallback by ID - `fix`
 
 - Resumen: se agrega recuperacion de detalle por ID para ejercicios, permitiendo obtener GIF/instrucciones aunque no vengan en el listado paginado.
