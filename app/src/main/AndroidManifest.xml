@@ -40,6 +40,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.routines.RoutinePickerActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.placeholder.ThirdHubActivity"
             android:exported="false" />
             

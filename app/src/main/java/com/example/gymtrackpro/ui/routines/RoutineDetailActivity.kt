@@ -19,6 +19,7 @@ class RoutineDetailActivity : AppCompatActivity() {
     private val vm: RoutineDetailViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
+    private var routineId: Int = -1
 
     private val adapter = ExerciseAdapter { exercise ->
         startActivity(Intent(this, ExerciseDetailActivity::class.java).apply {
@@ -39,11 +40,19 @@ class RoutineDetailActivity : AppCompatActivity() {
         b = ActivityRoutineDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        val routineId = intent.getIntExtra(EXTRA_ROUTINE_ID, -1)
+        routineId = intent.getIntExtra(EXTRA_ROUTINE_ID, -1)
         val routineName = intent.getStringExtra(EXTRA_ROUTINE_NAME).orEmpty()
 
         b.tvTitle.text = if (routineName.isBlank()) "Rutina" else routineName
-        b.btnBack.setOnClickListener { finish() }
+        b.btnAddExerciseToRoutine.setOnClickListener {
+            if (routineId > 0) {
+                startActivity(
+                    Intent(this, com.example.gymtrackpro.ui.exercises.ExercisesActivity::class.java).apply {
+                        putExtra(com.example.gymtrackpro.ui.exercises.ExercisesActivity.EXTRA_TARGET_ROUTINE_ID, routineId)
+                    }
+                )
+            }
+        }
 
         b.rvRoutineExercises.layoutManager = LinearLayoutManager(this)
         b.rvRoutineExercises.setHasFixedSize(true)
@@ -61,6 +70,13 @@ class RoutineDetailActivity : AppCompatActivity() {
             return
         }
         vm.loadRoutineExercises(routineId)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (routineId > 0) {
+            vm.loadRoutineExercises(routineId)
+        }
     }
 
     companion object {

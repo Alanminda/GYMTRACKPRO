@@ -13,6 +13,9 @@ class ExerciseDetailViewModel(private val repo: GymRepository) : ViewModel() {
     private val _detail = MutableLiveData<ExerciseEntity?>(null)
     val detail: LiveData<ExerciseEntity?> = _detail
 
+    private val _message = MutableLiveData<String?>(null)
+    val message: LiveData<String?> = _message
+
     fun loadDetail(exerciseId: String) {
         viewModelScope.launch {
             try {
@@ -21,5 +24,23 @@ class ExerciseDetailViewModel(private val repo: GymRepository) : ViewModel() {
                 // Mantener data inicial si falla remoto.
             }
         }
+    }
+
+    fun addExerciseToRoutine(routineId: Int, exerciseId: String) {
+        viewModelScope.launch {
+            try {
+                repo.addExerciseToRoutine(routineId, exerciseId)
+                if (repo.isLoggedIn()) {
+                    repo.syncForLoggedUser()
+                }
+                _message.value = "Ejercicio anadido a la rutina"
+            } catch (_: Exception) {
+                _message.value = "No se pudo anadir el ejercicio"
+            }
+        }
+    }
+
+    fun clearMessage() {
+        _message.value = null
     }
 }

@@ -21,6 +21,106 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 19:xx - Remove Redundant Back Buttons on Mobile - `fix`
+
+- Resumen: se eliminan botones visuales de volver en pantallas internas para usar navegacion nativa del telefono (gesto/boton del sistema).
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_exercise_detail.xml` -> se elimina `btnBack` y se reajustan constraints del header.
+  - `app/src/main/res/layout/activity_routine_detail.xml` -> se elimina `btnBack` y se reajustan constraints.
+  - `app/src/main/res/layout/activity_routine_picker.xml` -> se elimina `btnBack` y se reajustan constraints.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> se remueve listener de `btnBack`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> se remueve listener de `btnBack`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutinePickerActivity.kt` -> se remueve listener de `btnBack`.
+- Motivo:
+  - En telefono el boton/gesto del sistema ya cubre el retorno, y el control visual extra generaba ruido en la interfaz.
+- Impacto:
+  - UI mas limpia en pantallas secundarias.
+  - La navegacion de regreso sigue funcionando via sistema Android.
+- Verificacion:
+  - Busqueda de referencias `btnBack` completada en layouts/activities afectadas.
+  - Compilacion final en Android Studio pendiente.
+
+---
+
+### 2026-03-08 19:xx - Routine Exercise Sync Trigger Fix - `fix`
+
+- Resumen: se corrige el bug donde ejercicios anadidos/quitaados en rutina no se reflejaban de forma estable porque no siempre se sincronizaban antes del pull remoto.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> al anadir/quitar ejercicio se marca la rutina padre como `PENDING_UPSERT`; ademas `syncPendingRoutines()` ahora reconcilia pendientes de `routine_exercise` y fuerza su rutina a pendiente antes de sincronizar.
+- Motivo:
+  - El flujo previo podia dejar cambios solo en `routine_exercise` sin entrar en `routineDao.getPendingSync()`, y luego el pull remoto podia sobreescribir enlaces locales no subidos.
+- Impacto:
+  - Los ejercicios anadidos/quitaados se sincronizan y se mantienen al recargar.
+  - Se recuperan tambien pendientes viejos que ya existian en local.
+- Verificacion:
+  - Revision de flujo `add/remove -> syncPendingRoutines -> pullRemoteRoutinesToLocal` completada.
+  - Prueba funcional en dispositivo pendiente (anadir ejercicio, volver a rutina, reiniciar app y validar persistencia).
+
+---
+
+### 2026-03-08 18:xx - Add Exercise Feedback UX - `feat`
+
+- Resumen: se agrega feedback visual al anadir ejercicio a rutina (snackbar + estado de boton con check) antes de regresar a la pantalla de ejercicios.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> al confirmar alta se muestra snackbar, boton cambia a `Anadido` con icono check y luego retorna automaticamente.
+- Motivo:
+  - Mejorar claridad de accion completada y evitar sensacion de salto brusco al volver.
+- Impacto:
+  - UX mas clara al anadir ejercicios a rutinas.
+- Verificacion:
+  - Revision de flujo de mensajes y retorno automatico completada.
+  - Prueba funcional en dispositivo pendiente.
+
+---
+
+### 2026-03-08 17:xx - Routine Add UX + Exercise Detail UI Refresh - `feat`
+
+- Resumen: se corrige flujo de anadir ejercicios a rutina, se reemplaza picker en dialogo por pantalla dedicada y se mejora visual de detalle de ejercicio con Material 3.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> recarga de ejercicios en `onResume` para reflejar altas recientes.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutinePickerActivity.kt` -> nueva pantalla visual para elegir rutina.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutinePickerViewModel.kt` -> carga de rutinas locales para selector.
+  - `app/src/main/res/layout/activity_routine_picker.xml` -> nuevo layout del selector de rutinas.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> usa picker dedicado y, tras anadir, retorna a pantalla anterior de ejercicios.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailViewModel.kt` -> simplificacion de logica de picker (sin dialog local).
+  - `app/src/main/res/layout/activity_exercise_detail.xml` -> rediseño visual con componentes Material 3 (cards, jerarquia tipografica, CTA final).
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt` -> soporte para `RoutinePickerViewModel`.
+  - `app/src/main/AndroidManifest.xml` -> registro de `RoutinePickerActivity`.
+- Motivo:
+  - El alta se hacia pero no siempre se veia al volver; ademas se pedia reemplazar dialog por vista de rutinas y mejorar UX visual del detalle.
+- Impacto:
+  - La rutina muestra ejercicios añadidos al regresar.
+  - Desde ejercicios general, elegir rutina ahora se hace en pantalla dedicada.
+  - Al añadir ejercicio, retorna automaticamente a la lista de ejercicios.
+- Verificacion:
+  - Revision de intents/extras y ciclo de vida (`onResume`) completada.
+  - Validacion funcional final pendiente en dispositivo.
+
+---
+
+### 2026-03-08 16:xx - Routine Exercise Add Flow - `feat`
+
+- Resumen: se implementa flujo de anadir ejercicios a rutinas desde dos entradas distintas (detalle de rutina y modulo ejercicios general).
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> boton `+` que abre ejercicios en modo seleccion para rutina.
+  - `app/src/main/res/layout/activity_routine_detail.xml` -> `FloatingActionButton` para anadir ejercicio a rutina.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> modo seleccion por rutina (`EXTRA_TARGET_ROUTINE_ID`) sin hub inferior.
+  - `app/src/main/res/layout/activity_exercises.xml` -> nuevo hint visual para modo seleccion de rutina.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> boton `Anadir a la rutina` (directo) o `Anadir a una rutina` (selector).
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailViewModel.kt` -> carga de rutinas disponibles y accion de anadir ejercicio.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineDao.kt` -> consulta puntual `getActiveByUser`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> `getRoutinesLocal()` para picker de rutinas.
+- Motivo:
+  - Completar flujo funcional de asignacion de ejercicios a rutinas según contexto de navegacion.
+- Impacto:
+  - Desde una rutina: anadido directo a esa rutina.
+  - Desde ejercicios general: selector de rutina antes de guardar.
+- Verificacion:
+  - Revision de extras/intents, binding de botones y flujo ViewModel completada.
+  - Prueba funcional pendiente en dispositivo.
+
+---
+
 ### 2026-03-08 15:xx - Hub Visual Polish + FAB Position - `fix`
 
 - Resumen: se mejora apariencia del hub inferior y se corrige superposicion del boton `+` en Home.
