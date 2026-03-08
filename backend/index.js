@@ -31,7 +31,8 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "gymtrack-api", storage: "supabase" });
 });
 
-const EXTERNAL_PAGE_SIZE = 200;
+const EXTERNAL_PAGE_SIZE = Number(process.env.EXERCISE_FETCH_PAGE_SIZE || "50");
+const EXTERNAL_FULL_FETCH_LIMIT = Number(process.env.EXERCISE_FULL_FETCH_LIMIT || "2000");
 const MAX_CACHE_ITEMS = Number(process.env.EXERCISE_CACHE_MAX_ITEMS || "20000");
 const MAX_EXPANSION_STEPS_PER_REQUEST = 80;
 let exerciseCache = { updatedAt: 0, items: [], remoteOffset: 0, sourceExhausted: false };
@@ -97,7 +98,7 @@ async function refillCacheIfExpired() {
       updatedAt: Date.now(),
       items: firstPage,
       remoteOffset: firstPage.length,
-      sourceExhausted: firstPage.length < EXTERNAL_PAGE_SIZE || firstPage.length >= MAX_CACHE_ITEMS,
+      sourceExhausted: firstPage.length === 0 || firstPage.length >= MAX_CACHE_ITEMS,
     };
   } catch {
     // Si falla remoto, se conserva cache anterior.
@@ -127,26 +128,39 @@ async function expandCacheByOnePage() {
     return false;
   }
 
-  const existing = new Set(exerciseCache.items.map((e) => e.id));
-  const merged = [...exerciseCache.items];
+  const beforeLength = exerciseCache.items.length;
+  let merged = mergeUniqueExercises(exerciseCache.items, page);
+
+  const remoteOffset = exerciseCache.remoteOffset + page.length;
+  const noGrowth = merged.length === beforeLength;
+  if (noGrowth && exerciseCache.remoteOffset > 0) {
+    // Fallback: algunos proveedores ignoran offset. Intentamos carga grande unica.
+    const fullPage = await fetchExercisesFromRapidApi(EXTERNAL_FULL_FETCH_LIMIT, 0);
+    merged = mergeUniqueExercises(merged, fullPage);
+  }
+
+  const stillNoGrowth = merged.length === beforeLength;
+  const reachedCacheMax = merged.length >= MAX_CACHE_ITEMS;
+  exerciseCache = {
+    updatedAt: Date.now(),
+    items: reachedCacheMax ? merged.slice(0, MAX_CACHE_ITEMS) : merged,
+    remoteOffset,
+    sourceExhausted: stillNoGrowth || reachedCacheMax,
+  };
+
+  return !exerciseCache.sourceExhausted;
+}
+
+function mergeUniqueExercises(base, page) {
+  const existing = new Set(base.map((e) => e.id));
+  const merged = [...base];
   for (const item of page) {
     if (!existing.has(item.id)) {
       merged.push(item);
       existing.add(item.id);
     }
   }
-
-  const remoteOffset = exerciseCache.remoteOffset + page.length;
-  const reachedSourceEnd = page.length < EXTERNAL_PAGE_SIZE;
-  const reachedCacheMax = merged.length >= MAX_CACHE_ITEMS;
-  exerciseCache = {
-    updatedAt: Date.now(),
-    items: reachedCacheMax ? merged.slice(0, MAX_CACHE_ITEMS) : merged,
-    remoteOffset,
-    sourceExhausted: reachedSourceEnd || reachedCacheMax,
-  };
-
-  return !exerciseCache.sourceExhausted;
+  return merged;
 }
 
 function filterExercises(list, q) {
@@ -254,6 +268,16 @@ app.get("/exercises", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener ejercicios", detail: error.message });
   }
+});
+
+app.get("/exercises/debug", auth, (_req, res) => {
+  return res.json({
+    cacheItems: exerciseCache.items.length,
+    remoteOffset: exerciseCache.remoteOffset,
+    sourceExhausted: exerciseCache.sourceExhausted,
+    externalPageSize: EXTERNAL_PAGE_SIZE,
+    maxCacheItems: MAX_CACHE_ITEMS,
+  });
 });
 
 app.get("/routines", auth, async (req, res) => {

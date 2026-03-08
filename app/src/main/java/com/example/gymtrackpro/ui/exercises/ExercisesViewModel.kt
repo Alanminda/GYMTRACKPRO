@@ -79,7 +79,7 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
 
                 if (currentGeneration != generation) return@launch
 
-                if (page.size < PAGE_SIZE) {
+                if (page.isEmpty()) {
                     endReached = true
                 }
 
@@ -100,6 +100,6 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     companion object {
-        private const val PAGE_SIZE = 100
+        private const val PAGE_SIZE = 50
     }
 }
