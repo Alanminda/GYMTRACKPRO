@@ -88,6 +88,33 @@ async function fetchExercisesFromRapidApi(limit = EXTERNAL_PAGE_SIZE, offset = 0
   return data.map(mapExerciseDto).filter(Boolean);
 }
 
+async function fetchExerciseDetailFromRapidApi(id) {
+  if (!RAPIDAPI_KEY) return null;
+  const candidates = [
+    `${EXERCISEDB_BASE_URL}/exercises/exercise/${id}`,
+    `${EXERCISEDB_BASE_URL}/exercises/${id}`,
+  ];
+
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      });
+      if (!response.ok) continue;
+      const data = await response.json();
+      const normalized = Array.isArray(data) ? data[0] : data;
+      const mapped = mapExerciseDto(normalized);
+      if (mapped) return mapped;
+    } catch {
+      // Intentar siguiente candidato.
+    }
+  }
+  return null;
+}
+
 function isCacheFresh() {
   const ttlMs = Number(EXERCISE_CACHE_TTL_MINUTES) * 60 * 1000;
   return exerciseCache.items.length > 0 && Date.now() - exerciseCache.updatedAt < ttlMs;
@@ -284,6 +311,43 @@ app.get("/exercises/debug", auth, (_req, res) => {
     sampleHasGif: Boolean(sample?.gifUrl),
     sampleGifUrl: sample?.gifUrl || null,
   });
+});
+
+app.get("/exercises/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "Id requerido" });
+
+    await refillCacheIfExpired();
+    let cached = exerciseCache.items.find((e) => e.id === id) || null;
+    const needsEnrichment =
+      !cached || (!cached.gifUrl && (!cached.instructions || cached.instructions.length === 0));
+
+    if (needsEnrichment) {
+      const detail = await fetchExerciseDetailFromRapidApi(id);
+      if (detail) {
+        const merged = {
+          ...(cached || {}),
+          ...detail,
+          id: cached?.id || detail.id,
+          name: cached?.name || detail.name,
+          muscleGroup: cached?.muscleGroup || detail.muscleGroup,
+        };
+        const index = exerciseCache.items.findIndex((e) => e.id === id);
+        if (index >= 0) {
+          exerciseCache.items[index] = merged;
+        } else {
+          exerciseCache.items.push(merged);
+        }
+        cached = merged;
+      }
+    }
+
+    if (!cached) return res.status(404).json({ message: "Ejercicio no encontrado" });
+    return res.json(cached);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener detalle de ejercicio", detail: error.message });
+  }
 });
 
 app.get("/routines", auth, async (req, res) => {

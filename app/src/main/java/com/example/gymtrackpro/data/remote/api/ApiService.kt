@@ -20,6 +20,12 @@ interface ApiService {
         @Query("q") q: String? = null
     ): List<ExerciseDto>
 
+    @GET("exercises/{id}")
+    suspend fun getExerciseById(
+        @Header("Authorization") bearer: String,
+        @Path("id") id: String
+    ): ExerciseDto
+
     @GET("routines")
     suspend fun getRoutines(@Header("Authorization") bearer: String): List<RoutineRemoteDto>
 

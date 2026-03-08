@@ -21,6 +21,28 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-07 19:xx - Exercise GIF Fallback by ID - `fix`
+
+- Resumen: se agrega recuperacion de detalle por ID para ejercicios, permitiendo obtener GIF/instrucciones aunque no vengan en el listado paginado.
+- Archivos modificados:
+  - `backend/index.js` -> nuevo endpoint `GET /exercises/:id` con enriquecimiento remoto desde ExerciseDB y merge en cache.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt` -> nuevo `getExerciseById`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `fetchExerciseDetailFromApi(exerciseId)`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailViewModel.kt` -> ViewModel para cargar detalle remoto en pantalla de detalle.
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt` -> soporte para `ExerciseDetailViewModel`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> envia `exercise.id` al abrir detalle.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> carga remota de detalle si faltan media/instrucciones en extras iniciales.
+- Motivo:
+  - El endpoint de lista no siempre incluye `gifUrl` en todos los items; hacia falta una via de detalle para completar informacion visual.
+- Impacto:
+  - Mayor tasa de ejercicios con GIF visible en detalle.
+  - Instrucciones y metadatos mas completos al abrir un ejercicio.
+- Verificacion:
+  - Sintaxis backend valida (`node --check backend/index.js`).
+  - Validacion funcional pendiente tras redeploy/restart del backend.
+
+---
+
 ### 2026-03-07 18:xx - Exercise Media + Material 3 UI - `feat`
 
 - Resumen: se robustece carga de GIF/imagen de ejercicios y se moderniza la interfaz de lista con componentes Material Design 3.
