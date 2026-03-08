@@ -13,7 +13,7 @@
         android:hint="Buscar ejercicio"
         app:boxBackgroundMode="outline"
         app:endIconMode="clear_text"
-        app:layout_constraintEnd_toStartOf="@id/btnHome"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -23,18 +23,6 @@
             android:layout_height="wrap_content"
             android:inputType="text" />
     </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnHome"
-        style="@style/Widget.Material3.Button.TonalButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:minWidth="0dp"
-        android:text="Home"
-        app:layout_constraintBottom_toBottomOf="@id/searchInputLayout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/searchInputLayout" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvExercises"
@@ -66,9 +54,19 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textColor="#FF0000"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:itemIconTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:menu="@menu/main_bottom_nav" />
 
     <ProgressBar
         android:id="@+id/progressInitial"

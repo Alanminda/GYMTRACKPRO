@@ -40,7 +40,7 @@
         android:id="@+id/tvEmptyRoutineExercises"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No hay ejercicios añadidos"
+        android:text="No hay ejercicios anadidos"
         android:textColor="#666666"
         app:layout_constraintBottom_toBottomOf="@id/rvRoutineExercises"
         app:layout_constraintEnd_toEndOf="@id/rvRoutineExercises"
