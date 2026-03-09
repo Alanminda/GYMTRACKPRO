@@ -21,6 +21,7 @@ data class RoutineEntity(
     val routineType: String = "OWN",
     val ownerName: String? = null,
     val name: String,
+    val isCompleted: Boolean = false,
     val userId: Int,
     val syncState: String = "PENDING_UPSERT",
     val deleted: Boolean = false,

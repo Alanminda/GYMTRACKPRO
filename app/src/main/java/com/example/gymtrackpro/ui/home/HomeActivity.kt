@@ -99,8 +99,11 @@ class HomeActivity : AppCompatActivity() {
                 val pos = viewHolder.bindingAdapterPosition
                 if (pos == RecyclerView.NO_POSITION) return 0
                 val routine = adapter.getItemAt(pos) ?: return 0
-                if (routine.routineType != "OWN") return 0
-                return ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+                return when (routine.routineType) {
+                    "OWN" -> ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+                    "FAVORITE" -> ItemTouchHelper.RIGHT
+                    else -> 0
+                }
             }
 
             override fun onMove(
@@ -133,17 +136,22 @@ class HomeActivity : AppCompatActivity() {
                     forceRebindRoutines()
                     return
                 }
-                if (routine.routineType != "OWN") {
+                if (routine.routineType != "OWN" && routine.routineType != "FAVORITE") {
                     forceRebindRoutines()
                     return
                 }
                 if (direction == ItemTouchHelper.LEFT) {
-                    vm.shareRoutine(routine.id, routine.name)
-                    forceRebindRoutines()
+                    if (routine.routineType == "OWN") {
+                        vm.shareRoutine(routine.id, routine.name)
+                    }
                 } else {
-                    confirmDeleteRoutine(routine, pos)
-                    forceRebindRoutines()
+                    if (routine.routineType == "OWN") {
+                        confirmDeleteRoutine(routine, pos)
+                    } else if (routine.routineType == "FAVORITE") {
+                        confirmRemoveFavoriteRoutine(routine, pos)
+                    }
                 }
+                forceRebindRoutines()
             }
 
             override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
@@ -171,7 +179,52 @@ class HomeActivity : AppCompatActivity() {
                 val position = viewHolder.bindingAdapterPosition
                 if (position == RecyclerView.NO_POSITION) return
                 val routine = adapter.getItemAt(position)
-                if (routine?.routineType != "OWN") {
+                if (routine == null) {
+                    ItemTouchHelper.Callback.getDefaultUIUtil().onDraw(
+                        c,
+                        recyclerView,
+                        viewHolder.b.foregroundContainer,
+                        0f,
+                        dY,
+                        actionState,
+                        isCurrentlyActive
+                    )
+                    return
+                }
+
+                if (routine.routineType == "FAVORITE" && dX < 0f) {
+                    ItemTouchHelper.Callback.getDefaultUIUtil().onDraw(
+                        c,
+                        recyclerView,
+                        viewHolder.b.foregroundContainer,
+                        0f,
+                        dY,
+                        actionState,
+                        isCurrentlyActive
+                    )
+                    viewHolder.b.btnDelete.alpha = 1f
+                    viewHolder.b.btnShare.alpha = 0f
+                    return
+                }
+
+                if (routine.routineType == "FAVORITE" && dX > 0f) {
+                    val maxShift = recyclerView.width.toFloat()
+                    val translated = dX.coerceIn(0f, maxShift)
+                    ItemTouchHelper.Callback.getDefaultUIUtil().onDraw(
+                        c,
+                        recyclerView,
+                        viewHolder.b.foregroundContainer,
+                        translated,
+                        dY,
+                        actionState,
+                        isCurrentlyActive
+                    )
+                    viewHolder.b.btnDelete.alpha = 1f
+                    viewHolder.b.btnShare.alpha = 0f
+                    return
+                }
+
+                if (routine.routineType != "OWN" && routine.routineType != "FAVORITE") {
                     ItemTouchHelper.Callback.getDefaultUIUtil().onDraw(
                         c,
                         recyclerView,
@@ -242,6 +295,27 @@ class HomeActivity : AppCompatActivity() {
                 }
             }
             .setPositiveButton("Eliminar") { _, _ ->
+                vm.deleteRoutine(routine.id)
+                forceRebindRoutines()
+            }
+            .setOnCancelListener {
+                if (position != NO_POSITION) {
+                    forceRebindRoutines()
+                }
+            }
+            .show()
+    }
+
+    private fun confirmRemoveFavoriteRoutine(routine: RoutineEntity, position: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("Quitar de favoritos")
+            .setMessage("Se quitara \"${routine.name}\" de favoritos.")
+            .setNegativeButton("Cancelar") { _, _ ->
+                if (position != NO_POSITION) {
+                    forceRebindRoutines()
+                }
+            }
+            .setPositiveButton("Quitar") { _, _ ->
                 vm.deleteRoutine(routine.id)
                 forceRebindRoutines()
             }

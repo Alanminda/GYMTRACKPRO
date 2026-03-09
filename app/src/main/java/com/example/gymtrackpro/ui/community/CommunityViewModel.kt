@@ -37,7 +37,9 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
         generation += 1
         offset = 0
         endReached = false
+        loadingPage = false
         _items.value = emptyList()
+        _loading.value = false
         loadNextPage()
     }
 
@@ -88,9 +90,10 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
                 if (currentGeneration != generation) return@launch
                 _error.value = "No se pudo cargar comunidad"
             } finally {
-                if (currentGeneration != generation) return@launch
                 loadingPage = false
-                _loading.value = false
+                if (currentGeneration == generation) {
+                    _loading.value = false
+                }
             }
         }
     }

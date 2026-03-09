@@ -41,6 +41,7 @@ class ThirdHubActivity : AppCompatActivity() {
         }
     )
     private var currentItemsCount: Int = 0
+    private var isLoadingNow: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,7 +70,7 @@ class ThirdHubActivity : AppCompatActivity() {
         vm.items.observe(this) { items ->
             currentItemsCount = items.size
             adapter.submitList(items)
-            b.tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+            b.tvEmpty.visibility = if (items.isEmpty() && !isLoadingNow) View.VISIBLE else View.GONE
             b.rvCommunity.post {
                 if (items.isNotEmpty() && !b.rvCommunity.canScrollVertically(1)) {
                     vm.loadMoreIfNeeded(items.lastIndex)
@@ -77,8 +78,10 @@ class ThirdHubActivity : AppCompatActivity() {
             }
         }
         vm.loading.observe(this) { isLoading ->
+            isLoadingNow = isLoading
             b.progressInitial.visibility = if (isLoading && currentItemsCount == 0) View.VISIBLE else View.GONE
             b.progressPaging.visibility = if (isLoading && currentItemsCount > 0) View.VISIBLE else View.GONE
+            b.tvEmpty.visibility = if (!isLoading && currentItemsCount == 0) View.VISIBLE else View.GONE
         }
         vm.error.observe(this) { b.tvError.text = it ?: "" }
         vm.message.observe(this) { msg ->

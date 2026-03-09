@@ -21,6 +21,199 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 23:xx - Local Orders Text File + Git Ignore - `chore`
+
+- Resumen: se crea un archivo `.txt` local para anotar ordenes y se excluye del repositorio.
+- Archivos modificados:
+  - `ordenes_locales.txt` -> nuevo archivo para ordenes/instrucciones locales del usuario.
+  - `.gitignore` -> agregado `ordenes_locales.txt`.
+- Motivo:
+  - Permitir guardar instrucciones temporales sin subirlas a git.
+- Impacto:
+  - Puedes usar el archivo libremente y no se versiona.
+- Verificacion:
+  - Archivo creado y regla de ignore aplicada.
+
+---
+
+### 2026-03-08 23:xx - Routine Completion Progress Bar + Clear All Button - `feat`
+
+- Resumen: se agrega barra de porcentaje de avance en detalle de rutina y boton para desmarcar todos los ejercicios marcados como hechos.
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_routine_detail.xml` -> nueva `LinearProgressIndicator` debajo del titulo, texto de porcentaje y boton `Desmarcar todas`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> calculo de progreso `done/total` y actualizacion de UI (`0%-100%`) en propias y favoritas.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailViewModel.kt` -> accion `clearAllCompletedExercises()`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `clearRoutineCompletedExercises(...)`.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineExerciseDao.kt` -> query `clearCompletedByRoutine(...)`.
+- Motivo:
+  - Mostrar avance real de cumplimiento de rutina y permitir reinicio rapido del progreso marcado.
+- Impacto:
+  - Si se marcan todos los ejercicios, la barra llega a `100%`.
+  - El boton inferior desmarca todos los ejercicios en verde.
+- Verificacion:
+  - Revision de flujo de marcado individual y recalculo de porcentaje completada.
+  - Build/prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 23:xx - Community Search Recovery + Empty/Loading State Fix - `fix`
+
+- Resumen: se corrige bloqueo intermitente del buscador de comunidad y solapamiento visual entre "No hay rutinas" y loader.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/CommunityViewModel.kt` -> `loadInitial()` ahora resetea `loadingPage`; en `finally` de paginacion se libera siempre `loadingPage` aunque cambie generacion.
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt` -> `tvEmpty` solo visible cuando no esta cargando; control de estado unificado para `progressInitial/progressPaging/empty`.
+- Motivo:
+  - Al cancelar/buscar rapido, `loadingPage` podia quedar atascado en `true` y no volver a disparar consultas; ademas el estado vacio se pintaba durante carga inicial.
+- Impacto:
+  - El buscador vuelve a responder de forma consistente incluso tras limpiar texto o cambiar busqueda varias veces.
+  - Ya no se ve "No hay rutinas" encima del indicador de carga.
+- Verificacion:
+  - Revision del flujo de generacion/cancelacion y del render de estados en Comunidad completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 23:xx - Kotlin Build Fix for Theme Attr References - `fix`
+
+- Resumen: se corrigen referencias de atributos de color (`colorPrimary`, `colorError`, etc.) para usar `R.attr` del modulo app y resolver error de compilacion Kotlin.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt` -> `MaterialColors.getColor(...)` actualizado a `com.example.gymtrackpro.R.attr.*`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> mismo ajuste de atributos de tema en logica visual de swipe.
+- Motivo:
+  - `Unresolved reference` al usar atributos desde `com.google.android.material.R.attr` en este proyecto.
+- Impacto:
+  - `:app:compileDebugKotlin` vuelve a compilar en esas clases.
+- Verificacion:
+  - Revision de imports y usos de `MaterialColors` completada.
+  - Build final en Android Studio pendiente.
+
+---
+
+### 2026-03-08 23:xx - Kotlin Build Fix (No Theme Attr Dependency) - `fix`
+
+- Resumen: se elimina dependencia de `R.attr.*` en colores de adapters/swipe y se usan colores directos seguros para evitar `Unresolved reference 'attr'`.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt` -> colores migrados a `ContextCompat` con recursos directos.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> colores de `onChildDraw` migrados a `ContextCompat` con recursos directos.
+- Motivo:
+  - El modulo no expone esos `attr` en la clase `R` de compilacion actual.
+- Impacto:
+  - Se elimina el bloqueo de compilacion por referencias de atributos.
+- Verificacion:
+  - Busqueda de referencias `R.attr/attr.color` en archivos impactados sin coincidencias.
+  - Build final en Android Studio pendiente.
+
+---
+
+### 2026-03-08 23:xx - Favorites Swipe Direction Fix + M3 Icon Polish in Routine Detail - `fix`
+
+- Resumen: se corrige direccion del swipe para quitar favoritos y se mejora visual de iconos/swipe en ejercicios dentro de rutina con estilo Material 3.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `FAVORITE` ahora elimina de favoritos con swipe a la derecha (direccion corregida); swipe izquierdo vuelve a estar bloqueado para esa accion.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt` -> estado `Hecho` con icono moderno (`ic_check_circle_24`), colores de tema Material 3 y borde acorde.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> `onChildDraw` actualizado con fondos redondeados y paleta Material 3; iconos personalizados (`check/delete`) en swipe de ejercicios.
+  - `app/src/main/res/drawable/ic_check_circle_24.xml` -> nuevo icono vectorial.
+  - `app/src/main/res/drawable/ic_delete_24.xml` -> nuevo icono vectorial.
+- Motivo:
+  - Alinear gesto de favoritos con el comportamiento esperado y elevar la calidad visual de acciones por swipe en detalle de rutina.
+- Impacto:
+  - Quitar favoritos responde en la direccion correcta.
+  - Swipes de ejercicios se ven mas claros y modernos (M3), con iconografia consistente.
+- Verificacion:
+  - Revision de reglas de swipe en Home y render de iconos/colores en RoutineDetail completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 23:xx - Routine Detail Swipe Icons + Delete Confirmation - `feat`
+
+- Resumen: se agrega iconografia visual a swipes de ejercicios y confirmacion explicita al eliminar dentro de rutina propia.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt` -> ejercicios marcados como hechos muestran icono check en titulo y fondo verde.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> `onChildDraw` ahora pinta fondo/iconeo de swipe:
+    - izquierda: check verde (marcar hecho),
+    - derecha en propias: delete rojo,
+    - derecha en favoritas: bloqueado visualmente;
+    ademas, al borrar ejercicio se pide confirmacion (`Estas seguro de eliminar este ejercicio de la rutina?`).
+- Motivo:
+  - Hacer mas clara la accion de swipe y evitar eliminaciones accidentales en ejercicios de rutina.
+- Impacto:
+  - Mejor feedback visual del gesto.
+  - Eliminacion de ejercicios requiere confirmacion del usuario.
+- Verificacion:
+  - Revision de flujo de swipe + confirm dialog en detalle de rutina completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 23:xx - Swipe Rules Reverted in Home + Exercise-Level Actions in Routine Detail - `feat`
+
+- Resumen: se revierte Home al comportamiento anterior (propias: compartir/eliminar; favoritas: quitar favorito) y se mueve la logica de marcar hecho/eliminar al nivel de ejercicios dentro de cada rutina.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> reglas de swipe:
+    - `OWN`: izquierda comparte, derecha elimina.
+    - `FAVORITE`: izquierda quita de favoritos (sin compartir).
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> se quita visual de rutina "cumplida" en Home y vuelve presentacion normal de rutinas.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/RoutineExerciseEntity.kt` -> nuevo campo `isCompleted` por ejercicio dentro de rutina.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineExerciseDao.kt` -> queries para obtener/setear ejercicios completados.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/db/AppDatabase.kt` -> version subida a `6`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevos metodos para toggle de ejercicio hecho y lectura de completados; se preserva estado `isCompleted` al refrescar rutinas remotas/favoritas.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailViewModel.kt` -> estado de completados + acciones `toggle/remove` de ejercicios + mensajes.
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt` -> swipe en ejercicios:
+    - `OWN`: izquierda marca/desmarca hecho, derecha elimina.
+    - `FAVORITE`: solo izquierda marca/desmarca hecho (sin eliminar).
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt` -> pinta ejercicio en verde cuando esta hecho y muestra indicador `Hecho`.
+- Motivo:
+  - Ajustar la UX al flujo correcto: acciones de progreso/eliminacion deben ser por ejercicio dentro de rutina, no en la tarjeta de rutina.
+- Impacto:
+  - Home vuelve a funcion social/gestion de rutinas (share/delete/favorito).
+  - Progreso de cumplimiento se controla en detalle de rutina por ejercicio.
+- Verificacion:
+  - Revisión de flujo Home -> RoutineDetail -> swipe por tipo completada.
+  - Compilacion/prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 23:xx - Routine Completion Swipe (Own/Favorites) - `feat`
+
+- Resumen: se agrega estado local de rutina cumplida (`isCompleted`) y nueva logica de swipe por categoria.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/RoutineEntity.kt` -> nuevo campo `isCompleted`.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineDao.kt` -> nuevo `setCompleted(...)`.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/db/AppDatabase.kt` -> version subida a `5`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `toggleRoutineCompleted(...)`; preserva `isCompleted` al sincronizar rutinas remotas/favoritas.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> nuevo `toggleRoutineCompleted(...)` con mensaje de feedback.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> swipe:
+    - `OWN`: izquierda marca/desmarca cumplida, derecha elimina con confirmacion.
+    - `FAVORITE`: solo izquierda marca/desmarca cumplida (sin eliminar).
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> boton izquierdo de accion cambia a check verde y tarjeta se pinta verde cuando `isCompleted=true`.
+- Motivo:
+  - Implementar flujo solicitado: completar rutina por swipe y restringir favoritos a accion no destructiva.
+- Impacto:
+  - Estado "cumplida" persistente en base local.
+  - En favoritas ya no hay eliminacion por swipe.
+- Verificacion:
+  - Revision de capa Room + Repository + Home UI completada.
+  - Compilacion/prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Favorites Swipe-Right Removes Favorite - `feat`
+
+- Resumen: en la categoria `Favoritas`, swipe a la derecha ahora quita la rutina de favoritos (equivalente funcional a eliminar en propias).
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `getSwipeDirs` permite en favoritas solo `RIGHT`; `onSwiped` enruta a dialogo `Quitar de favoritos`; bloqueo de swipe izquierdo en favoritas tambien aplicado en `onChildDraw`.
+- Motivo:
+  - Unificar gesto de swipe derecho para accion destructiva contextual tambien en rutinas favoritas.
+- Impacto:
+  - En `Favoritas`: swipe derecha -> confirmar y quitar favorito.
+  - En `Favoritas`: swipe izquierda no ejecuta compartir.
+- Verificacion:
+  - Revision de rutas de swipe por `routineType` completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
 ### 2026-03-08 22:xx - Swipe Anti-Stuck Fallback (Forced Rebind) - `fix`
 
 - Resumen: se agrega fallback agresivo anti-bloqueo para swipe en Home usando rebind total tras cada accion.
