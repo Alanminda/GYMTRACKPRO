@@ -1,8 +1,98 @@
-﻿# GYMTRACKPRO - Registro de Cambios
+﻿# GYMTRACKPRO
 
-Este archivo lleva un registro exacto de cambios en el proyecto.
+Aplicacion movil Android (Kotlin) orientada al seguimiento de rutinas de entrenamiento, con arquitectura MVVM, persistencia local offline-first y sincronizacion con backend remoto.
 
-## Formato de registro (usar siempre)
+## Descripcion del Proyecto
+
+GYMTRACKPRO permite:
+- registro/login de usuarios y modo invitado,
+- exploracion de ejercicios (API externa via backend),
+- creacion y gestion de rutinas propias,
+- guardado de rutinas favoritas de la comunidad,
+- seguimiento de avance dentro de cada rutina (porcentaje de ejercicios completados).
+
+La app usa base de datos local con Room para operar sin conexion y sincroniza con backend cuando hay red.
+
+### Problema que resuelve
+
+El proyecto resuelve la gestion integral de entrenamiento personal en un solo flujo:
+- planificar rutinas,
+- buscar ejercicios en catalogo externo,
+- llevar avance por rutina,
+- compartir rutinas y descubrir comunidad.
+
+Evita depender de notas separadas o apps sin sincronizacion/localizacion de datos.
+
+### Objetivo funcional
+
+La aplicacion permite:
+- autenticacion (registro/login) y modo invitado,
+- creacion de rutinas propias con ejercicios personalizados,
+- seguimiento de progreso por ejercicio dentro de cada rutina,
+- integracion social (rutinas publicas y favoritos),
+- trabajo offline con sincronizacion posterior.
+
+### Modulos principales
+
+- `Auth`: login, registro y sesion.
+- `Home`: rutinas propias y favoritas.
+- `Exercises`: catalogo externo con busqueda e infinite scroll.
+- `Routine Detail`: progreso de ejercicios, porcentaje y acciones por swipe.
+- `Community`: feed de rutinas publicas con filtros y favoritos.
+- `Profile`: datos de usuario y cierre de sesion.
+
+## Arquitectura y Stack Tecnico
+
+- Lenguaje: Kotlin
+- Arquitectura: MVVM + Repository Pattern
+- Persistencia local: Room
+- Networking: Retrofit + OkHttp
+- Concurrencia: Corrutinas
+- UI: Material Design 3 + ViewBinding + RecyclerView
+- Backend: Node.js + Supabase + Railway
+
+### Enfoque de arquitectura
+
+- `MVVM`: Activities/Fragments observan estado; ViewModels concentran logica de presentacion.
+- `Repository Pattern`: coordina fuentes local (Room) y remota (API).
+- `Offline-first`: persistencia local prioritaria y sincronizacion cuando hay conectividad.
+- `Corrutinas`: operaciones asincronas de red/base sin bloquear UI.
+
+## Diagrama de Base de Datos (DER)
+
+Se renderiza asi:
+
+![DER de GYMTRACKPRO](docs/der/der.png)
+
+## Capturas de Pantalla
+
+Se renderizan asi:
+
+![Login](docs/screenshots/login.png)
+![Home](docs/screenshots/home.png)
+![Detalle de rutina](docs/screenshots/routine_detail.png)
+![Comunidad](docs/screenshots/community.png)
+![Perfil](docs/screenshots/profile.png)
+
+## Flujo de uso (resumen)
+
+1. El usuario inicia sesion (o entra como invitado).
+2. Crea/selecciona una rutina.
+3. Agrega ejercicios desde el catalogo.
+4. Marca ejercicios como hechos y visualiza porcentaje completado.
+5. Comparte rutina o guarda rutinas de comunidad en favoritos.
+
+## Estado del proyecto
+
+- App funcional en modulos principales (Auth, Home, Exercises, Community, Profile).
+- Base de datos local + sincronizacion remota operativas.
+- UI basada en Material 3 con ViewBinding y RecyclerViews.
+
+---
+
+## Actualizaciones (Bitacora)
+
+### Formato de registro (usar siempre)
 
 - Fecha: `YYYY-MM-DD HH:mm` (zona horaria local)
 - Autor: `nombre o rol`
@@ -20,6 +110,55 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 ---
 
 ## Historial
+
+### 2026-03-08 23:xx - README Expansion Profesional (Descripcion/DER/Capturas) - `docs`
+
+- Resumen: se amplia el README con descripcion funcional completa, modulos, arquitectura, flujo de uso y guia explicita de rutas para DER/capturas.
+- Archivos modificados:
+  - `README.md` -> secciones nuevas: problema que resuelve, objetivo funcional, modulos, enfoque de arquitectura, flujo de uso y estado del proyecto.
+- Motivo:
+  - Mejorar presentacion academica/profesional y cumplir requerimiento de descripcion + DER + screenshots en un documento unico.
+- Impacto:
+  - README mas claro para evaluacion, demo y mantenimiento.
+- Verificacion:
+  - Se validaron rutas de imagen para render directo en GitHub.
+
+---
+
+### 2026-03-08 23:xx - README Profesional + Secciones DER/Capturas - `docs`
+
+- Resumen: se reestructura README con formato de presentacion profesional para entrega y se dejan rutas directas para DER y screenshots.
+- Archivos modificados:
+  - `README.md` -> nuevas secciones: descripcion del proyecto, stack tecnico, DER, capturas y bitacora abajo.
+  - `docs/der/README.txt` -> guia para colocar `der.png`.
+  - `docs/screenshots/README.txt` -> guia de nombres de capturas.
+- Motivo:
+  - Cumplir formato solicitado para documentacion academica y facilitar carga automatica de imagenes en GitHub.
+- Impacto:
+  - El README ahora sirve como documento de presentacion + bitacora tecnica.
+- Verificacion:
+  - Estructura revisada y rutas de imagen definidas.
+
+---
+## Matriz CRUD Explicita (Auditoria)
+
+### Estado actual por entidad principal
+
+| Entidad | Create | Read | Update | Delete | Estado |
+|---|---|---|---|---|---|
+| `routines` | Si (crear rutina) | Si (lista Home + detalle) | Si (renombrar, agregar/quitar ejercicios, compartir, marcar progreso en ejercicios) | Si (eliminar propia / quitar favorita) | Cumple |
+| `routine_exercise` (N:M) | Si (agregar ejercicio a rutina) | Si (listar ejercicios de rutina) | Si (marcar ejercicio como hecho/no hecho) | Si (quitar ejercicio de rutina propia) | Cumple |
+| `progress` | Si (registrar progreso) | Si (listar progreso) | Parcial (actualizacion directa en UI no expuesta de forma completa) | Parcial (borrado directo en UI no expuesto de forma completa) | Parcial |
+| `users` (perfil local/remoto) | Si (registro) | Si (lectura perfil/sesion) | Si (editar perfil) | Si (logout/salida de sesion; borrado fisico de usuario no expuesto) | Cumple funcional |
+| `exercises` (catalogo API/cache local) | No aplica como alta manual (fuente externa) | Si (listar, buscar, detalle) | No aplica como edicion manual | No aplica como borrado manual | Cumple por modelo de catalogo |
+
+### Nota academica
+
+- Para defensa docente, `routines` y `routine_exercise` ya muestran CRUD completo y explicito en UI.
+- Si te exigen CRUD completo "visible" adicional, el candidato mas directo es `progress`:
+  - agregar pantalla/acciones para editar y eliminar registros desde la app.
+
+---
 
 ### 2026-03-08 23:xx - Local Orders Text File + Git Ignore - `chore`
 
@@ -799,7 +938,7 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 - Archivos modificados:
   - `app/src/main/res/layout/activity_exercises.xml` -> regrabado sin BOM (UTF-8 limpio).
 - Motivo:
-  - Resolver error de parser XML: `mismatched input '﻿'` y `root is null` durante Data Binding.
+  - Resolver error de parser XML: `mismatched input '?'` y `root is null` durante Data Binding.
 - Impacto:
   - Se desbloquea el merge de recursos para build `debug`.
 - Verificacion:
@@ -1084,3 +1223,6 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 - Verificacion:
   - ...
 ```
+
+
+
