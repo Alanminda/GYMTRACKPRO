@@ -46,6 +46,9 @@ interface RoutineDao {
     @Query("UPDATE routines SET syncState = 'PENDING_UPSERT', deleted = 0, updatedAt = :updatedAt WHERE id = :id")
     suspend fun markPendingUpsert(id: Int, updatedAt: Long = System.currentTimeMillis())
 
+    @Query("UPDATE routines SET isCompleted = :completed, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun setCompleted(id: Int, completed: Boolean, updatedAt: Long = System.currentTimeMillis())
+
     @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'FAVORITE' ORDER BY updatedAt DESC")
     suspend fun getFavoritesByUser(userId: Int): List<RoutineEntity>
 }

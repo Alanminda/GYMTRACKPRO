@@ -142,6 +142,21 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
         }
     }
 
+    fun toggleRoutineCompleted(routineId: Int) {
+        viewModelScope.launch {
+            try {
+                val completed = repo.toggleRoutineCompleted(routineId)
+                _routineMessage.value = if (completed) {
+                    "Rutina marcada como cumplida"
+                } else {
+                    "Rutina desmarcada"
+                }
+            } catch (_: Exception) {
+                _routineMessage.value = "No se pudo actualizar estado de rutina"
+            }
+        }
+    }
+
     private fun refreshCategoryList() {
         val selected = _category.value ?: RoutineCategory.OWN
         _routines.value = when (selected) {

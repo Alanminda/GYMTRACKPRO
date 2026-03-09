@@ -152,6 +152,10 @@ class GymRepository(
         return resolveExercisesByIds(exerciseIds)
     }
 
+    suspend fun getRoutineCompletedExerciseIds(routineId: Int): Set<String> {
+        return routineExerciseDao.getCompletedExerciseIds(routineId).toSet()
+    }
+
     suspend fun getExercisesByIds(exerciseIds: List<String>): List<ExerciseEntity> {
         if (exerciseIds.isEmpty()) return emptyList()
         return resolveExercisesByIds(exerciseIds.distinct())
@@ -199,6 +203,13 @@ class GymRepository(
         routineDao.markPendingDelete(routineId)
     }
 
+    suspend fun toggleRoutineCompleted(routineId: Int): Boolean {
+        val current = routineDao.getById(routineId) ?: return false
+        val next = !current.isCompleted
+        routineDao.setCompleted(id = routineId, completed = next, updatedAt = System.currentTimeMillis())
+        return next
+    }
+
     suspend fun addExerciseToRoutine(routineId: Int, exerciseId: String) {
         routineExerciseDao.upsert(
             RoutineExerciseEntity(
@@ -225,6 +236,26 @@ class GymRepository(
         if (routine != null && !routine.deleted && routine.routineType == "OWN") {
             routineDao.markPendingUpsert(routineId)
         }
+    }
+
+    suspend fun toggleRoutineExerciseCompleted(routineId: Int, exerciseId: String): Boolean {
+        val current = routineExerciseDao.getActiveByRoutine(routineId)
+            .firstOrNull { it.exerciseId == exerciseId } ?: return false
+        val next = !current.isCompleted
+        routineExerciseDao.setCompleted(
+            routineId = routineId,
+            exerciseId = exerciseId,
+            completed = next,
+            updatedAt = System.currentTimeMillis()
+        )
+        return next
+    }
+
+    suspend fun clearRoutineCompletedExercises(routineId: Int) {
+        routineExerciseDao.clearCompletedByRoutine(
+            routineId = routineId,
+            updatedAt = System.currentTimeMillis()
+        )
     }
 
     suspend fun syncPendingRoutines() {
@@ -286,6 +317,11 @@ class GymRepository(
         val allExerciseIds = linkedSetOf<String>()
         for (remote in remoteRoutines) {
             val existing = routineDao.getByRemoteId(remote._id)
+            val previousCompletedByExercise = if (existing != null) {
+                routineExerciseDao.getActiveByRoutine(existing.id).associate { it.exerciseId to it.isCompleted }
+            } else {
+                emptyMap()
+            }
             val localId = if (existing == null) {
                 routineDao.insert(
                     RoutineEntity(
@@ -302,6 +338,7 @@ class GymRepository(
                 routineDao.update(
                     existing.copy(
                         name = remote.name,
+                        isCompleted = existing.isCompleted,
                         routineType = "OWN",
                         syncState = "SYNCED",
                         deleted = false,
@@ -318,6 +355,7 @@ class GymRepository(
                     RoutineExerciseEntity(
                         routineId = localId,
                         exerciseId = exerciseId,
+                        isCompleted = previousCompletedByExercise[exerciseId] == true,
                         syncState = "SYNCED",
                         deleted = false,
                         updatedAt = System.currentTimeMillis()
@@ -418,6 +456,11 @@ class GymRepository(
         val allExerciseIds = linkedSetOf<String>()
         for (remote in favoriteRemote) {
             val existing = localByPublicId[remote.id]
+            val previousCompletedByExercise = if (existing != null) {
+                routineExerciseDao.getActiveByRoutine(existing.id).associate { it.exerciseId to it.isCompleted }
+            } else {
+                emptyMap()
+            }
             val localId = if (existing == null) {
                 val normalizedName = withDurationInName(remote.name, remote.durationMinutes)
                 routineDao.insert(
@@ -437,6 +480,7 @@ class GymRepository(
                 routineDao.update(
                     existing.copy(
                         name = normalizedName,
+                        isCompleted = existing.isCompleted,
                         ownerName = remote.ownerName,
                         routineType = "FAVORITE",
                         syncState = "SYNCED",
@@ -454,6 +498,7 @@ class GymRepository(
                     RoutineExerciseEntity(
                         routineId = localId,
                         exerciseId = exerciseId,
+                        isCompleted = previousCompletedByExercise[exerciseId] == true,
                         syncState = "SYNCED",
                         deleted = false,
                         updatedAt = System.currentTimeMillis()

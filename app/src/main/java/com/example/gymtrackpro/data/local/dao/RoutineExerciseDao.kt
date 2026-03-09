@@ -15,6 +15,9 @@ interface RoutineExerciseDao {
     @Query("SELECT exerciseId FROM routine_exercise WHERE routineId = :routineId AND deleted = 0")
     suspend fun getActiveExerciseIds(routineId: Int): List<String>
 
+    @Query("SELECT exerciseId FROM routine_exercise WHERE routineId = :routineId AND deleted = 0 AND isCompleted = 1")
+    suspend fun getCompletedExerciseIds(routineId: Int): List<String>
+
     @Query("SELECT * FROM routine_exercise WHERE syncState != 'SYNCED' OR deleted = 1")
     suspend fun getPendingSync(): List<RoutineExerciseEntity>
 
@@ -26,6 +29,20 @@ interface RoutineExerciseDao {
 
     @Query("UPDATE routine_exercise SET syncState = 'SYNCED', deleted = 0, updatedAt = :updatedAt WHERE routineId = :routineId")
     suspend fun markRoutineSynced(routineId: Int, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE routine_exercise SET isCompleted = :completed, updatedAt = :updatedAt WHERE routineId = :routineId AND exerciseId = :exerciseId")
+    suspend fun setCompleted(
+        routineId: Int,
+        exerciseId: String,
+        completed: Boolean,
+        updatedAt: Long = System.currentTimeMillis()
+    )
+
+    @Query("UPDATE routine_exercise SET isCompleted = 0, updatedAt = :updatedAt WHERE routineId = :routineId AND deleted = 0 AND isCompleted = 1")
+    suspend fun clearCompletedByRoutine(
+        routineId: Int,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
     @Query("DELETE FROM routine_exercise WHERE routineId = :routineId")
     suspend fun hardDeleteByRoutine(routineId: Int)
