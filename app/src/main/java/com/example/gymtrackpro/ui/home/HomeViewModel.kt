@@ -128,7 +128,6 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
                     _routineMessage.value = "Inicia sesion para compartir"
                     return@launch
                 }
-                repo.syncForLoggedUser()
                 val shared = repo.shareRoutine(routineId)
                 _routineMessage.value = if (shared.alreadyShared) {
                     "Ya estaba compartida, se actualizo: $routineName"

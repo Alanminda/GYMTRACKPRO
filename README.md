@@ -21,6 +21,297 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 22:xx - Swipe Anti-Stuck Fallback (Forced Rebind) - `fix`
+
+- Resumen: se agrega fallback agresivo anti-bloqueo para swipe en Home usando rebind total tras cada accion.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> nuevo reset robusto con `resetSwipedHolderVisual(...)` + `forceRebindRoutines()` (`notifyDataSetChanged` y restauracion visual de filas visibles) despues de swipe/share/delete/cancel.
+- Motivo:
+  - Persistia un caso intermitente donde la fila quedaba desplazada por posicion invalida o estado transitorio de ItemTouchHelper.
+- Impacto:
+  - El item vuelve a su estado original de forma forzada incluso en escenarios de race condition.
+- Verificacion:
+  - Revision de ramas con `NO_POSITION` y fallback de rebind completo completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Immediate Swipe Reset on Action Trigger - `fix`
+
+- Resumen: se fuerza restauracion visual inmediata al disparar `onSwiped` para evitar que el item quede lateralmente desplazado hasta tocar/mover pantalla.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `clearView` inmediato con `ItemTouchUIUtil` en `onSwiped` y `notifyItemChanged` directo (sin `post`) para recovery mas rapido.
+- Motivo:
+  - Persistia un delay visual donde el item quedaba a un lado brevemente tras swipe completado.
+- Impacto:
+  - El item vuelve de forma instantanea al estado original tras accionar compartir/eliminar.
+- Verificacion:
+  - Revision de flujo `onSwiped` completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Swipe Rebuilt with ItemTouchUIUtil (Official Pattern) - `fix`
+
+- Resumen: se reconstruye el swipe de Home siguiendo el patron recomendado por Android (`ItemTouchHelper.Callback.getDefaultUIUtil`) para evitar filas pegadas/desaparecidas.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> swipe ahora usa `onSelectedChanged/onChildDraw/clearView` sobre `foregroundContainer` con `getDefaultUIUtil`; se elimina reset forzado repetitivo; el loader de Home ahora usa `vm.routines` para no mostrarse cuando ya hay datos.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> se elimina estado interno de "fila abierta" que ya no aplicaba al modo full-swipe; bind/recycle quedan con estado visual neutro.
+- Motivo:
+  - La implementacion anterior mezclaba logicas de reveal lateral y full-swipe, provocando estados visuales inconsistentes.
+- Impacto:
+  - Swipe mas estable: el item vuelve correctamente y no queda pegado al lado.
+  - Menos parpadeos/cargas falsas en Home cuando la lista ya esta pintada.
+- Verificacion:
+  - Revision de flujo `ItemTouchHelper` y simplificacion de adapter completadas.
+  - Prueba en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Home Swipe Final Reset + Smart Loading Visibility - `fix`
+
+- Resumen: se corrige pegado visual del swipe reseteando tambien `itemView` y se evita mostrar `cargando` cuando ya hay rutinas visibles.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> en bind/payload/recycle se fuerza `itemView.translationX = 0f`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> reset visual incluye `itemView.translationX`; progreso solo visible cuando `loading=true` y lista vacia.
+- Motivo:
+  - Algunas filas quedaban lateralmente desplazadas aunque el foreground se reseteara; ademas el loader aparecia innecesariamente sobre contenido ya cargado.
+- Impacto:
+  - El swipe vuelve de forma consistente a estado original.
+  - Mejor UX: ya no se muestra spinner central cuando las rutinas ya estan pintadas.
+- Verificacion:
+  - Revision del ciclo de vida de celdas (`bind/recycle/swipe`) y regla de visibilidad de progreso completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Forced Swipe Visual Reset (Anti-Stuck) - `fix`
+
+- Resumen: se fuerza restauracion total del estado visual del swipe para evitar filas pegadas lateralmente.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> nuevo `forceResetSwipeVisuals()` aplicado antes/despues de acciones de swipe y al cancelar/cerrar dialogo de eliminar.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> `onViewRecycled` ahora reinicia `translationX` y `alpha` de botones para evitar arrastre de estado entre celdas recicladas.
+- Motivo:
+  - Persistia un bug donde algunas filas quedaban visualmente trabadas tras swipe.
+- Impacto:
+  - Restauracion visual consistente incluso en casos de `NO_POSITION`/reciclado rapido de RecyclerView.
+- Verificacion:
+  - Revision de flujo de reset en `onSwiped`, dialogo y reciclado completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Swipe Hard Reset for Stuck Rows - `fix`
+
+- Resumen: se agrega reset reforzado para evitar que la fila quede desplazada tras swipe.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> en `onSwiped` se restaura visual inmediato del `ViewHolder`; si `position` es invalida se usa `notifyDataSetChanged()` como fallback; para posiciones validas se fuerza `notifyItemChanged(pos)` antes de ejecutar accion.
+- Motivo:
+  - Habia casos donde el item no regresaba a su forma original por estados transitorios de `bindingAdapterPosition`.
+- Impacto:
+  - El item vuelve consistentemente a su posicion normal despues del swipe.
+- Verificacion:
+  - Revision de ramas `NO_POSITION/null` y flujo de restauracion completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Swipe Rebuild to Full-Swipe Actions - `fix`
+
+- Resumen: se reconstruye el swipe de Home a modo `full swipe` estable (sin estado lateral abierto).
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> swipe izquierda comparte y swipe derecha pide confirmacion de eliminar al completar gesto; `onChildDraw` ahora permite desplazamiento completo del item; `clearView` siempre restaura estado visual inicial.
+- Motivo:
+  - El modo de reveal lateral mantenia estados intermedios y podia trabarse entre acciones.
+- Impacto:
+  - Gestos mas predecibles: arrastre completo ejecuta accion y luego el item vuelve a estado normal.
+  - Se mantiene confirmacion al eliminar y feedback por toast al compartir.
+- Verificacion:
+  - Revisión de flujo completo de `ItemTouchHelper` y restauracion visual.
+  - Build/prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Swipe Lateral Stabilized (Action by Button) - `fix`
+
+- Resumen: se vuelve al modo lateral estable: swipe revela boton por lado y la accion se ejecuta solo al tocar el boton.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `onSwiped` vuelve a abrir acciones (`share/delete`) en vez de ejecutar directo; `onChildDraw/clearView` ocultan icono contrario segun direccion; threshold ajustado.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> estado visual unificado de reveal (`translationX` + `alpha`) en bind normal y por payload para evitar bloqueos tras compartir/eliminar.
+- Motivo:
+  - El modo de accion directa con swipe completo estaba dejando estados trabados y no siempre restauraba correctamente.
+- Impacto:
+  - Swipe izquierda muestra solo compartir.
+  - Swipe derecha muestra solo eliminar.
+  - Compartir/eliminar vuelve a estado original de forma consistente al cerrarse acciones.
+- Verificacion:
+  - Revision de flujo `ItemTouchHelper` + adapter payload completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 22:xx - Swipe Reset Stability + Cancel Recovery - `fix`
+
+- Resumen: se corrige bloqueo visual del swipe en Home y se fuerza restauracion estable del item tras accion o cancelacion.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> reset inmediato de `translationX/alpha` en `onSwiped`, `notifyItemChanged` ejecutado via `RecyclerView.post`, threshold ajustado a `0.35`, y restauracion al cancelar/cerrar dialogo de eliminar.
+- Motivo:
+  - Habia casos donde el item quedaba “trabado” y no regresaba a su estado original despues del swipe o al cancelar eliminar.
+- Impacto:
+  - Swipe mas fluido, sin bloqueo residual, y recuperacion visual consistente.
+- Verificacion:
+  - Revision de flujo `onChildDraw/onSwiped/clearView` completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Home Compile Fix (Delete Dialog Position) - `fix`
+
+- Resumen: se corrige error de compilacion por llamada antigua a `confirmDeleteRoutine` sin parametro `position`.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> llamada `onDelete` actualizada con `NO_POSITION` y proteccion para no ejecutar `notifyItemChanged` con posicion invalida.
+- Motivo:
+  - Evitar fallo `No value passed for parameter 'position'` en `compileDebugKotlin`.
+- Impacto:
+  - Compilacion restaurada y dialogo de eliminar mantiene comportamiento correcto en swipe y click directo.
+- Verificacion:
+  - Revision de referencias de firma y ramas de cancelacion completada.
+  - Build final en Android Studio pendiente.
+
+---
+
+### 2026-03-08 21:xx - Swipe Visual Side Fix + Cancel Restore - `fix`
+
+- Resumen: al arrastrar rutina solo se muestra el boton del lado correspondiente y cancelar eliminar restaura la tarjeta.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> en `onChildDraw` se limita reveal visual al ancho de un boton y se oculta el boton contrario por `alpha`; en dialogo de eliminar, `Cancelar`/cerrar notifica restauracion del item.
+- Motivo:
+  - Evitar confusion visual mostrando accion contraria durante el swipe y asegurar retorno completo al estado original cuando no se confirma eliminacion.
+- Impacto:
+  - Swipe mas claro (accion visual univoca por direccion).
+  - UX consistente al cancelar eliminacion.
+- Verificacion:
+  - Revision de flujo de `onSwiped`, `onChildDraw` y `AlertDialog` completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Full Swipe Actions (No Lock State) - `fix`
+
+- Resumen: se elimina estado de swipe abierto en Home y se cambia a accion directa al completar arrastre.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> swipe completo izquierda comparte; swipe completo derecha abre confirmacion para eliminar; reset visual inmediato del item.
+- Motivo:
+  - El modo de apertura lateral se seguia trabando al alternar entre lados.
+- Impacto:
+  - Interaccion mas estable: arrastre completo ejecuta accion, sin bloqueo entre izquierda/derecha.
+  - Se mantiene confirmacion antes de eliminar.
+- Verificacion:
+  - Revision de flujo de `ItemTouchHelper` completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Swipe Side-To-Side Unblocked - `fix`
+
+- Resumen: se corrige bloqueo de swipe que impedia pasar de un lado al otro cuando una rutina ya estaba abierta.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `getSwipeDirs` deja de bloquear filas abiertas y `getSwipeThreshold` baja a `0.03` para cambiar de lado con menos arrastre.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> `openActions(...)` pasa a comportamiento determinista (abre el lado pedido, sin toggle).
+- Motivo:
+  - El gesto quedaba bloqueado tras abrir una accion lateral, obligando a cerrar manualmente antes de deslizar al otro lado.
+- Impacto:
+  - Ahora puedes deslizar izquierda/derecha directamente en la misma rutina sin bloqueo intermedio ni cierres inesperados.
+- Verificacion:
+  - Revision de logica de `ItemTouchHelper` completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Swipe Reveal Width Reduced (Single Action) - `fix`
+
+- Resumen: se reduce distancia de swipe para acciones laterales a un solo boton por lado.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> `revealWidthPx` ajustado de `168dp` a `84dp`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `getSwipeThreshold` ajustado de `0.25` a `0.08` para activar antes la accion.
+- Motivo:
+  - El gesto estaba abriendo demasiado recorrido pese a que ahora solo hay una accion por direccion.
+- Impacto:
+  - Swipe mas corto y preciso, alineado al ancho real de cada boton y con menor recorrido para disparar la accion.
+- Verificacion:
+  - Revision de translation clamp y ancho de accion completada.
+  - Prueba final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Directional Swipe Actions in Home - `feat`
+
+- Resumen: se separan acciones swipe por direccion en rutinas de Home.
+- Archivos modificados:
+  - `app/src/main/res/layout/item_routine.xml` -> acciones laterales divididas por lado: izquierda `Eliminar`, derecha `Compartir`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> estado de apertura ahora incluye direccion (`left/right`) y translationX objetivo por lado.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> swipe izquierda abre solo `Compartir`; swipe derecha abre solo `Eliminar`; ajuste de clamp y restauracion por direccion.
+- Motivo:
+  - Implementar UX solicitada: cada gesto lateral muestra una sola accion, evitando ruido visual.
+- Impacto:
+  - Swipe izquierda -> solo boton compartir.
+  - Swipe derecha -> solo boton eliminar.
+- Verificacion:
+  - Revision de flujo de apertura/cierre por direccion completada.
+  - Prueba funcional en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Swipe Action Tap Latency Reduction - `fix`
+
+- Resumen: se elimina demora perceptible al tocar botones `Compartir/Eliminar` tras abrir swipe en Home.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt` -> en updates por payload se aplica `translationX` directa (sin animacion).
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `RecyclerView` sin `itemAnimator`; `clearView` ahora aplica posicion directa; animaciones internas de `ItemTouchHelper` reducidas a `90ms`.
+- Motivo:
+  - Los botones laterales tardaban en responder por combinacion de animaciones de recover/change.
+- Impacto:
+  - Respuesta tactil mas inmediata al tocar acciones swipe.
+- Verificacion:
+  - Revision del flujo de eventos y animaciones en `ItemTouchHelper` completada.
+  - Validacion final en dispositivo pendiente.
+
+---
+
+### 2026-03-08 21:xx - Swipe Share Button Touch Reliability - `fix`
+
+- Resumen: se mejora confiabilidad del boton `Compartir` en acciones swipe de Home.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> `ItemTouchHelper` ahora desactiva gestos de swipe cuando la fila esta abierta, evitando que intercepte taps sobre botones laterales.
+- Motivo:
+  - El gesto podia capturar el toque y cerrar/reiniciar el item antes de ejecutar `onShare`.
+- Impacto:
+  - El boton `Compartir` responde de forma consistente al tocarlo.
+- Verificacion:
+  - Revision de flujo de eventos touch en swipe abierto completada.
+  - Prueba funcional pendiente en dispositivo.
+
+---
+
+### 2026-03-08 21:xx - Share Routine Reliability (Direct Sync Path) - `fix`
+
+- Resumen: se corrige caso donde compartir rutina desde Home fallaba por depender de sincronizacion global previa.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> `shareRoutine(...)` ahora garantiza ruta directa:
+    - crea rutina remota si aun no tiene `remoteId`
+    - sincroniza ejercicios de esa rutina
+    - luego ejecuta `share`
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> share deja de depender de `syncForLoggedUser()` previo.
+- Motivo:
+  - Si fallaba algun paso de sync global, nunca se alcanzaba la llamada de compartir.
+- Impacto:
+  - Compartir desde Home es mas robusto y no se bloquea por errores ajenos al share.
+- Verificacion:
+  - Revision de flujo `share` local->remoto->publico completada.
+  - Prueba funcional tras deploy pendiente.
+
+---
+
 ### 2026-03-08 21:xx - Community Favorites/Share Reliability + Duration Sync - `fix`
 
 - Resumen: se corrigen tres incidencias: estado de estrella en comunidad, feedback de compartir rutina y tiempo `N/D` en favoritas.
