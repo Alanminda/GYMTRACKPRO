@@ -32,15 +32,19 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
     private var sort: String = "recent"
     private var searchJob: Job? = null
     private var generation: Int = 0
+    private var guestMode: Boolean = false
 
     fun loadInitial() {
-        generation += 1
-        offset = 0
-        endReached = false
-        loadingPage = false
-        _items.value = emptyList()
-        _loading.value = false
-        loadNextPage()
+        viewModelScope.launch {
+            guestMode = !repo.isLoggedIn()
+            generation += 1
+            offset = 0
+            endReached = false
+            loadingPage = false
+            _items.value = emptyList()
+            _loading.value = false
+            loadNextPage()
+        }
     }
 
     fun onQueryChanged(text: String) {
@@ -88,7 +92,11 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
                 // Cambios de busqueda/filtro cancelan carga anterior.
             } catch (_: Exception) {
                 if (currentGeneration != generation) return@launch
-                _error.value = "No se pudo cargar comunidad"
+                _error.value = if (guestMode) {
+                    "Modo invitado: comunidad no disponible (sin red o backend desactualizado)"
+                } else {
+                    "No se pudo cargar comunidad"
+                }
             } finally {
                 loadingPage = false
                 if (currentGeneration == generation) {
@@ -101,6 +109,10 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
     fun toggleFavorite(item: CommunityRoutineDto) {
         viewModelScope.launch {
             try {
+                if (!repo.isLoggedIn()) {
+                    _message.value = "Inicia sesion para usar favoritos"
+                    return@launch
+                }
                 val newState = !item.isFavorite
                 val remote = repo.setCommunityRoutineFavorite(item.id, newState)
                 _items.value = _items.value.orEmpty().map {

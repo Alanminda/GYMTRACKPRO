@@ -68,13 +68,31 @@ class GymRepository(
     }
 
     suspend fun fetchExercisesPageFromApi(query: String?, limit: Int, offset: Int): List<ExerciseEntity> {
-        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
-        val remote = api.getExercises(
-            bearer = "Bearer ${session.token}",
-            limit = limit,
-            offset = offset,
-            q = query?.takeIf { it.isNotBlank() }
-        )
+        val session = userDao.getSession()
+        val remote = if (session != null) {
+            api.getExercises(
+                bearer = "Bearer ${session.token}",
+                limit = limit,
+                offset = offset,
+                q = query?.takeIf { it.isNotBlank() }
+            )
+        } else {
+            try {
+                api.getPublicExercises(
+                    limit = limit,
+                    offset = offset,
+                    q = query?.takeIf { it.isNotBlank() }
+                )
+            } catch (_: Exception) {
+                // Compatibilidad con backend previo sin /public/*
+                api.getExercises(
+                    bearer = null,
+                    limit = limit,
+                    offset = offset,
+                    q = query?.takeIf { it.isNotBlank() }
+                )
+            }
+        }
 
         val mapped = remote.mapNotNull { dto ->
             val resolvedId = dto.mongoId ?: dto.id
@@ -99,12 +117,47 @@ class GymRepository(
         return mapped
     }
 
-    suspend fun fetchExerciseDetailFromApi(exerciseId: String): ExerciseEntity? {
-        val session = userDao.getSession() ?: return null
-        val dto = api.getExerciseById(
-            bearer = "Bearer ${session.token}",
-            id = exerciseId
+    suspend fun fetchExercisesPageFromLocalCache(
+        query: String?,
+        limit: Int,
+        offset: Int
+    ): List<ExerciseEntity> {
+        return exerciseDao.getAllPaged(
+            query = query?.trim().orEmpty(),
+            limit = limit,
+            offset = offset
         )
+    }
+
+    suspend fun fetchExercisesPageFromLocalRoutineCache(
+        query: String?,
+        limit: Int,
+        offset: Int
+    ): List<ExerciseEntity> {
+        return exerciseDao.getUsedInRoutinesPaged(
+            query = query?.trim().orEmpty(),
+            limit = limit,
+            offset = offset
+        )
+    }
+
+    suspend fun fetchExerciseDetailFromApi(exerciseId: String): ExerciseEntity? {
+        val session = userDao.getSession()
+        val dto = if (session != null) {
+            api.getExerciseById(
+                bearer = "Bearer ${session.token}",
+                id = exerciseId
+            )
+        } else {
+            try {
+                api.getPublicExerciseById(id = exerciseId)
+            } catch (_: Exception) {
+                api.getExerciseById(
+                    bearer = null,
+                    id = exerciseId
+                )
+            }
+        }
         val resolvedId = dto.mongoId ?: dto.id ?: exerciseId
         val mapped = ExerciseEntity(
             id = resolvedId,
@@ -410,14 +463,34 @@ class GymRepository(
         query: String?,
         sort: String
     ): List<CommunityRoutineDto> {
-        val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
-        return api.getCommunityRoutines(
-            bearer = "Bearer ${session.token}",
-            limit = limit,
-            offset = offset,
-            q = query?.takeIf { it.isNotBlank() },
-            sort = sort
-        )
+        val session = userDao.getSession()
+        return if (session != null) {
+            api.getCommunityRoutines(
+                bearer = "Bearer ${session.token}",
+                limit = limit,
+                offset = offset,
+                q = query?.takeIf { it.isNotBlank() },
+                sort = sort
+            )
+        } else {
+            try {
+                api.getPublicCommunityRoutines(
+                    limit = limit,
+                    offset = offset,
+                    q = query?.takeIf { it.isNotBlank() },
+                    sort = sort
+                )
+            } catch (_: Exception) {
+                // Compatibilidad con backend previo sin /public/*
+                api.getCommunityRoutines(
+                    bearer = null,
+                    limit = limit,
+                    offset = offset,
+                    q = query?.takeIf { it.isNotBlank() },
+                    sort = sort
+                )
+            }
+        }
     }
 
     suspend fun setCommunityRoutineFavorite(publicRoutineId: String, favorite: Boolean): CommunityFavoriteToggleDto {
@@ -538,7 +611,7 @@ class GymRepository(
         val localById = local.associateBy { it.id }
         val missingIds = exerciseIds.filter { !localById.containsKey(it) }
 
-        if (missingIds.isNotEmpty() && isLoggedIn()) {
+        if (missingIds.isNotEmpty()) {
             for (id in missingIds) {
                 try {
                     fetchExerciseDetailFromApi(id)

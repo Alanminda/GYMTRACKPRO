@@ -50,6 +50,21 @@ function auth(req, res, next) {
   }
 }
 
+function optionalAuth(req, _res, next) {
+  const h = req.headers.authorization || "";
+  const token = h.startsWith("Bearer ") ? h.slice(7) : "";
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+  } catch {
+    req.user = null;
+  }
+  return next();
+}
+
 function mapExerciseDto(item) {
   const id = item.id || item._id;
   if (!id || !item.name) return null;
@@ -409,7 +424,7 @@ app.put("/me", auth, async (req, res) => {
   }
 });
 
-app.get("/exercises", auth, async (req, res) => {
+async function handleExercisesList(req, res) {
   try {
     const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
@@ -434,7 +449,10 @@ app.get("/exercises", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener ejercicios", detail: error.message });
   }
-});
+}
+
+app.get("/exercises", optionalAuth, handleExercisesList);
+app.get("/public/exercises", handleExercisesList);
 
 app.get("/exercises/debug", auth, (_req, res) => {
   const sample = exerciseCache.items[0] || null;
@@ -449,7 +467,7 @@ app.get("/exercises/debug", auth, (_req, res) => {
   });
 });
 
-app.get("/exercises/:id", auth, async (req, res) => {
+async function handleExerciseDetail(req, res) {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: "Id requerido" });
@@ -484,7 +502,10 @@ app.get("/exercises/:id", auth, async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener detalle de ejercicio", detail: error.message });
   }
-});
+}
+
+app.get("/exercises/:id", optionalAuth, handleExerciseDetail);
+app.get("/public/exercises/:id", handleExerciseDetail);
 
 app.get("/exercises/:id/media", async (req, res) => {
   try {
@@ -714,7 +735,7 @@ app.post("/routines/:id/share", auth, async (req, res) => {
   }
 });
 
-app.get("/community/routines", auth, async (req, res) => {
+async function handleCommunityRoutines(req, res) {
   try {
     const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
@@ -747,13 +768,17 @@ app.get("/community/routines", auth, async (req, res) => {
       }
       favoritesByRoutineId = countMap;
 
-      const { data: mine, error: mineError } = await supabase
-        .from("public_routine_favorites")
-        .select("public_routine_id")
-        .in("public_routine_id", ids)
-        .eq("user_id", req.user.userId);
-      if (mineError) return res.status(500).json({ message: "Error al obtener favoritos" });
-      favoriteIdsByUser = new Set((mine || []).map((row) => String(row.public_routine_id)));
+      if (req.user?.userId) {
+        const { data: mine, error: mineError } = await supabase
+          .from("public_routine_favorites")
+          .select("public_routine_id")
+          .in("public_routine_id", ids)
+          .eq("user_id", req.user.userId);
+        if (mineError) return res.status(500).json({ message: "Error al obtener favoritos" });
+        favoriteIdsByUser = new Set((mine || []).map((row) => String(row.public_routine_id)));
+      } else {
+        favoriteIdsByUser = new Set();
+      }
     }
 
     const normalizeRow = (r) => {
@@ -810,7 +835,10 @@ app.get("/community/routines", auth, async (req, res) => {
   } catch {
     return res.status(500).json({ message: "Error al obtener comunidad" });
   }
-});
+}
+
+app.get("/community/routines", optionalAuth, handleCommunityRoutines);
+app.get("/public/community/routines", handleCommunityRoutines);
 
 app.post("/community/routines/:id/favorite", auth, async (req, res) => {
   try {

@@ -28,6 +28,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
 
     private val _routineMessage = MutableLiveData<String?>(null)
     val routineMessage: LiveData<String?> = _routineMessage
+    private var lastNetworkAvailable: Boolean? = null
 
     init {
         _routines.addSource(ownRoutines) { refreshCategoryList() }
@@ -46,6 +47,21 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
             } finally {
                 _loading.value = false
             }
+        }
+    }
+
+    fun onConnectivityChanged(isConnected: Boolean) {
+        if (!isConnected) {
+            lastNetworkAvailable = false
+            _error.value = "Sin conexion: usando memoria local en Home"
+            return
+        }
+
+        val shouldSync = lastNetworkAvailable != true
+        lastNetworkAvailable = true
+        _error.value = null
+        if (shouldSync) {
+            syncData()
         }
     }
 
