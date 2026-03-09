@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/routines/RoutinePickerViewModel.kt
+ * Proposito: Detalle/seleccion de rutinas y acciones sobre ejercicios internos.
+ */
 package com.example.gymtrackpro.ui.routines
 
 import androidx.lifecycle.LiveData
@@ -17,6 +22,8 @@ class RoutinePickerViewModel(private val repo: GymRepository) : ViewModel() {
     val error: LiveData<String?> = _error
 
     fun loadRoutines() {
+        // [Req C - Corrutinas] Carga en segundo plano.
+        // [Req A - Read] Obtiene rutinas desde Room a traves del Repository.
         viewModelScope.launch {
             try {
                 _routines.value = repo.getRoutinesLocal()
@@ -26,3 +33,4 @@ class RoutinePickerViewModel(private val repo: GymRepository) : ViewModel() {
         }
     }
 }
+

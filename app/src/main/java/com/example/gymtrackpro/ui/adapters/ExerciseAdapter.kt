@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt
+ * Proposito: Renderiza listas RecyclerView y maneja interacciones de item.
+ */
 package com.example.gymtrackpro.ui.adapters
 
 import android.view.LayoutInflater
@@ -13,8 +18,10 @@ import com.example.gymtrackpro.databinding.ItemExerciseBinding
 class ExerciseAdapter(
     private val onClick: (ExerciseEntity) -> Unit
 ) : ListAdapter<ExerciseEntity, ExerciseAdapter.VH>(Diff) {
+    // Conjunto de ejercicios marcados como completados en una rutina.
     private var completedExerciseIds: Set<String> = emptySet()
 
+    // [Req C/UI] DiffUtil para RecyclerView optimizada.
     object Diff : DiffUtil.ItemCallback<ExerciseEntity>() {
         override fun areItemsTheSame(old: ExerciseEntity, new: ExerciseEntity) = old.id == new.id
         override fun areContentsTheSame(old: ExerciseEntity, new: ExerciseEntity) = old == new
@@ -28,6 +35,7 @@ class ExerciseAdapter(
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
+        // Render de tarjeta ejercicio + estado visual completado/no completado.
         val item = getItem(position)
         holder.b.tvName.text = item.name
         if (completedExerciseIds.contains(item.id)) {
@@ -59,8 +67,10 @@ class ExerciseAdapter(
 
     fun submit(items: List<ExerciseEntity>) = submitList(items)
     fun submitCompletedIds(ids: Set<String>) {
+        // Refresca estado visual "Hecho" al cambiar progreso.
         completedExerciseIds = ids
         notifyDataSetChanged()
     }
     fun getItemAt(position: Int): ExerciseEntity? = currentList.getOrNull(position)
 }
+

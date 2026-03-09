@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/auth/RegisterActivity.kt
+ * Proposito: Pantallas y ViewModel de autenticacion (login/registro).
+ */
 package com.example.gymtrackpro.ui.auth
 
 import android.content.Intent
@@ -12,6 +17,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class RegisterActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding de registro.
     private lateinit var b: ActivityRegisterBinding
 
     private val vm: AuthViewModel by viewModels {
@@ -24,6 +30,7 @@ class RegisterActivity : AppCompatActivity() {
         setContentView(b.root)
 
         b.btnCreateAccount.setOnClickListener {
+            // [Req B] Alta de usuario hacia API.
             vm.register(
                 name = b.etName.text.toString().trim(),
                 email = b.etEmail.text.toString().trim(),
@@ -36,10 +43,12 @@ class RegisterActivity : AppCompatActivity() {
         }
 
         vm.loading.observe(this) { isLoading ->
+            // [Req B] Feedback de carga.
             b.progress.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
         vm.error.observe(this) { msg ->
+            // [Req B] Error de red/validacion.
             b.tvError.text = msg ?: ""
         }
 
@@ -51,3 +60,4 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 }
+

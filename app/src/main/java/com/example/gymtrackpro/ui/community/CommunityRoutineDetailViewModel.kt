@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/community/CommunityRoutineDetailViewModel.kt
+ * Proposito: Feed de comunidad, favoritos y detalle de rutinas publicas.
+ */
 package com.example.gymtrackpro.ui.community
 
 import androidx.lifecycle.LiveData
@@ -10,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class CommunityRoutineDetailViewModel(private val repo: GymRepository) : ViewModel() {
 
+    // [Req C - MVVM] Estado observable de detalle comunitario.
     private val _exercises = MutableLiveData<List<ExerciseEntity>>(emptyList())
     val exercises: LiveData<List<ExerciseEntity>> = _exercises
 
@@ -20,6 +26,7 @@ class CommunityRoutineDetailViewModel(private val repo: GymRepository) : ViewMod
     val error: LiveData<String?> = _error
 
     fun load(exerciseIds: List<String>) {
+        // [Req A/B] Lee de Room y completa faltantes via API cuando aplica.
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -33,3 +40,4 @@ class CommunityRoutineDetailViewModel(private val repo: GymRepository) : ViewMod
         }
     }
 }
+

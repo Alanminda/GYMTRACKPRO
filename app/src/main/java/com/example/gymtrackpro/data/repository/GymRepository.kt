@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/data/repository/GymRepository.kt
+ * Proposito: Coordina fuentes local/remota bajo Repository Pattern.
+ */
 package com.example.gymtrackpro.data.repository
 
 import com.example.gymtrackpro.data.local.dao.ExerciseDao
@@ -23,9 +28,11 @@ class GymRepository(
     private val api: ApiService
 ) {
 
+    // [Req C - Repository Pattern] Fuente local de sesion para decidir flujo local/remoto.
     suspend fun getSession(): UserLocalEntity? = userDao.getSession()
     suspend fun isLoggedIn(): Boolean = userDao.getSession() != null
 
+    // [Req B + C] Login/registro remoto y persistencia local de token.
     suspend fun register(name: String, email: String, password: String) {
         val res = api.register(RegisterRequest(name, email, password))
         userDao.saveSession(UserLocalEntity(id = 1, name = res.name, email = res.email, token = res.token))
@@ -58,6 +65,7 @@ class GymRepository(
         return updated
     }
 
+    // [Req C] UI consume ejercicios desde Room (fuente local reactiva).
     fun observeExercisesLocal(): Flow<List<ExerciseEntity>> = exerciseDao.observeAll()
 
     suspend fun refreshExercisesFromApi() {
@@ -67,6 +75,8 @@ class GymRepository(
         }
     }
 
+    // [Req B] Consumo REST con Retrofit (listar/filtrar ejercicios).
+    // [Req C] Estrategia local vs remota segun sesion (invitado/logueado).
     suspend fun fetchExercisesPageFromApi(query: String?, limit: Int, offset: Int): List<ExerciseEntity> {
         val session = userDao.getSession()
         val remote = if (session != null) {
@@ -111,12 +121,14 @@ class GymRepository(
             }
         }
 
+        // [Req A] Cache local de resultados remotos para offline-first.
         if (mapped.isNotEmpty()) {
             exerciseDao.upsertAll(mapped)
         }
         return mapped
     }
 
+    // [Req A] Fallback local completo (invitado offline / sin red).
     suspend fun fetchExercisesPageFromLocalCache(
         query: String?,
         limit: Int,
@@ -129,6 +141,7 @@ class GymRepository(
         )
     }
 
+    // [Req A] Fallback local solo con ejercicios usados en rutinas.
     suspend fun fetchExercisesPageFromLocalRoutineCache(
         query: String?,
         limit: Int,
@@ -141,6 +154,7 @@ class GymRepository(
         )
     }
 
+    // [Req B] Trae detalle remoto y lo guarda local para reuso posterior.
     suspend fun fetchExerciseDetailFromApi(exerciseId: String): ExerciseEntity? {
         val session = userDao.getSession()
         val dto = if (session != null) {
@@ -174,6 +188,7 @@ class GymRepository(
         return mapped
     }
 
+    // [Req A + C] Progreso se guarda local primero; sync difiere cuando hay red.
     fun observeProgress(userId: Int): Flow<List<ProgressEntity>> = progressDao.observeByUser(userId)
 
     suspend fun addProgress(dateIso: String, weight: Double, note: String?) {
@@ -182,6 +197,7 @@ class GymRepository(
         )
     }
 
+    // [Req C] Sincronizacion diferida (corrutinas) de pendientes locales -> backend.
     suspend fun syncPendingProgress() {
         val session = userDao.getSession() ?: return
         val pending = progressDao.getPendingSync()
@@ -194,6 +210,7 @@ class GymRepository(
         }
     }
 
+    // [Req A] CRUD de rutinas en Room.
     fun observeRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeActiveByUser(userId)
     fun observeFavoriteRoutinesLocal(userId: Int = 1): Flow<List<RoutineEntity>> = routineDao.observeByType(userId, "FAVORITE")
     suspend fun getRoutinesLocal(userId: Int = 1): List<RoutineEntity> = routineDao.getActiveByUser(userId)
@@ -214,11 +231,13 @@ class GymRepository(
         return resolveExercisesByIds(exerciseIds.distinct())
     }
 
+    // [Req A] Create
     suspend fun createRoutine(name: String, userId: Int = 1): Int {
         val routine = RoutineEntity(name = name, userId = userId, routineType = "OWN")
         return routineDao.insert(routine).toInt()
     }
 
+    // [Req A] Update
     suspend fun renameRoutine(routineId: Int, newName: String) {
         val current = routineDao.getById(routineId) ?: return
         if (current.routineType != "OWN") return
@@ -232,6 +251,7 @@ class GymRepository(
         )
     }
 
+    // [Req A] Delete (propia/favorita) con reglas de negocio.
     suspend fun deleteRoutine(routineId: Int) {
         val current = routineDao.getById(routineId) ?: return
         if (current.routineType == "FAVORITE") {
@@ -263,6 +283,7 @@ class GymRepository(
         return next
     }
 
+    // [Req C] Operaciones puente N:M rutina-ejercicio con estado offline.
     suspend fun addExerciseToRoutine(routineId: Int, exerciseId: String) {
         routineExerciseDao.upsert(
             RoutineExerciseEntity(
@@ -311,6 +332,7 @@ class GymRepository(
         )
     }
 
+    // [Req C] Sync completo local->remoto para rutinas y sus ejercicios.
     suspend fun syncPendingRoutines() {
         val session = userDao.getSession() ?: return
         val bearer = "Bearer ${session.token}"
@@ -355,6 +377,7 @@ class GymRepository(
         syncPendingProgress()
     }
 
+    // [Req C] Punto central de sincronizacion para usuario autenticado.
     suspend fun syncForLoggedUser() {
         if (!isLoggedIn()) return
         syncAllPending()
@@ -457,6 +480,7 @@ class GymRepository(
         )
     }
 
+    // [Req B] Comunidad: listar/filtrar remoto, con soporte invitado online.
     suspend fun fetchCommunityRoutinesPage(
         limit: Int,
         offset: Int,
@@ -606,6 +630,7 @@ class GymRepository(
         }
     }
 
+    // [Req C] Resolver ejercicios faltantes: primero local, luego remoto.
     private suspend fun resolveExercisesByIds(exerciseIds: List<String>): List<ExerciseEntity> {
         val local = exerciseDao.getByIds(exerciseIds)
         val localById = local.associateBy { it.id }
@@ -642,3 +667,4 @@ class GymRepository(
         return "$name (${durationMinutes} min)"
     }
 }
+

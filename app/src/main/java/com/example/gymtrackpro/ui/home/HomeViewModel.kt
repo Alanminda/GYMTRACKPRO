@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/home/HomeViewModel.kt
+ * Proposito: Pantalla principal de rutinas y su logica de presentacion.
+ */
 package com.example.gymtrackpro.ui.home
 
 import androidx.lifecycle.LiveData
@@ -12,6 +17,7 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(private val repo: GymRepository) : ViewModel() {
 
+    // [Req C - MVVM] Fuentes de datos observables desde Room.
     private val ownRoutines = repo.observeRoutinesLocal().asLiveData()
     private val favoriteRoutines = repo.observeFavoriteRoutinesLocal().asLiveData()
     private val _category = MutableLiveData(RoutineCategory.OWN)
@@ -31,12 +37,14 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
     private var lastNetworkAvailable: Boolean? = null
 
     init {
+        // [Req C] Combina fuentes y categoria en una sola lista para UI.
         _routines.addSource(ownRoutines) { refreshCategoryList() }
         _routines.addSource(favoriteRoutines) { refreshCategoryList() }
         _routines.addSource(_category) { refreshCategoryList() }
     }
 
     fun syncData() {
+        // [Req C - Corrutinas] Sync en segundo plano sin bloquear UI.
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -51,6 +59,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     fun onConnectivityChanged(isConnected: Boolean) {
+        // [Req B] Manejo de estado de red: mensaje offline + resincronizacion al reconectar.
         if (!isConnected) {
             lastNetworkAvailable = false
             _error.value = "Sin conexion: usando memoria local en Home"
@@ -75,6 +84,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
         }
 
         viewModelScope.launch {
+            // [Req A] Create local + [Req C] sincronizacion remota condicionada por sesion.
             _loading.value = true
             try {
                 repo.createRoutine("$cleanName (${cleanTime} min)")
@@ -111,6 +121,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun deleteRoutine(routineId: Int) {
         viewModelScope.launch {
+            // [Req A] Delete + [Req C] sync diferida.
             _loading.value = true
             try {
                 repo.deleteRoutine(routineId)
@@ -138,6 +149,7 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun shareRoutine(routineId: Int, routineName: String) {
         viewModelScope.launch {
+            // [Req B] Envia datos al backend (rutina publica).
             _loading.value = true
             try {
                 if (!repo.isLoggedIn()) {
@@ -186,3 +198,4 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
         FAVORITES
     }
 }
+

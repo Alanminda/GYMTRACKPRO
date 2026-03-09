@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt
+ * Proposito: Exploracion y detalle de ejercicios, incluyendo agregar a rutina.
+ */
 package com.example.gymtrackpro.ui.exercises
 
 import android.content.Intent
@@ -19,6 +24,7 @@ import com.google.android.material.snackbar.Snackbar
 
 class ExerciseDetailActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding de detalle + accion de agregar a rutina.
     private lateinit var b: ActivityExerciseDetailBinding
     private val vm: ExerciseDetailViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
@@ -27,6 +33,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
     private val routinePickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        // Resultado desde RoutinePicker: rutina elegida.
         if (result.resultCode != RESULT_OK) return@registerForActivityResult
         val routineId = result.data?.getIntExtra(RoutinePickerActivity.EXTRA_SELECTED_ROUTINE_ID, -1) ?: -1
         if (routineId > 0 && currentExerciseId.isNotBlank()) {
@@ -39,6 +46,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
         b = ActivityExerciseDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // Datos base enviados desde lista (optimiza primera pintura).
         val exerciseId = intent.getStringExtra(EXTRA_ID).orEmpty()
         currentExerciseId = exerciseId
         val targetRoutineId = intent.getIntExtra(EXTRA_TARGET_ROUTINE_ID, -1)
@@ -66,10 +74,12 @@ class ExerciseDetailActivity : AppCompatActivity() {
         )
 
         vm.detail.observe(this) { detail ->
+            // Si llega detalle enriquecido, re-renderiza UI.
             if (detail != null) render(detail)
         }
 
         if (exerciseId.isNotBlank() && (gifUrl.isBlank() || instructions.isBlank())) {
+            // [Req B] Completa info faltante via API.
             vm.loadDetail(exerciseId)
         }
 
@@ -92,6 +102,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
         }
 
         vm.message.observe(this) { msg ->
+            // Feedback de accion (agregado correcto/error).
             if (!msg.isNullOrBlank()) {
                 if (msg.startsWith("Ejercicio anadido")) {
                     showAddedFeedback(msg)
@@ -113,6 +124,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
     }
 
     private fun render(exercise: ExerciseEntity) {
+        // Render completo de datos y media (gif/imagen).
         b.tvTitle.text = exercise.name
         b.tvMuscleGroup.text = valueOrFallback("Grupo muscular", exercise.muscleGroup)
         b.tvBodyPart.text = valueOrFallback("Parte del cuerpo", exercise.bodyPart.orEmpty())
@@ -121,6 +133,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
         b.tvSecondaryMuscles.text = valueOrFallback("Musculos secundarios", exercise.secondaryMuscles.orEmpty())
         b.tvInstructions.text = valueOrFallback("Instrucciones", exercise.instructions.orEmpty())
 
+        // Prioriza proxy backend para mayor compatibilidad de media.
         val proxyUrl = resolveProxyMediaUrl(exercise)
         val directUrl = normalizeMediaUrl(exercise.gifUrl.orEmpty())
         val primaryUrl = if (proxyUrl.isNotBlank()) proxyUrl else directUrl
@@ -188,3 +201,4 @@ class ExerciseDetailActivity : AppCompatActivity() {
         const val EXTRA_INSTRUCTIONS = "extra_instructions"
     }
 }
+

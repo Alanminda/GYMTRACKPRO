@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/auth/AuthViewModel.kt
+ * Proposito: Pantallas y ViewModel de autenticacion (login/registro).
+ */
 package com.example.gymtrackpro.ui.auth
 
 import androidx.lifecycle.*
@@ -6,6 +11,7 @@ import kotlinx.coroutines.launch
 
 class AuthViewModel(private val repo: GymRepository) : ViewModel() {
 
+    // [Req C - MVVM] Estado observable de UI.
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
 
@@ -16,12 +22,14 @@ class AuthViewModel(private val repo: GymRepository) : ViewModel() {
     val loggedIn: LiveData<Boolean> = _loggedIn
 
     fun checkSession() {
+        // [Req C - Corrutinas] Consulta de sesion en segundo plano.
         viewModelScope.launch {
             _loggedIn.value = repo.getSession() != null
         }
     }
 
     fun login(email: String, password: String) {
+        // [Req B + C] Llamada Retrofit via Repository + estado de carga/error.
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -37,6 +45,7 @@ class AuthViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     fun register(name: String, email: String, password: String) {
+        // [Req B + C] Alta remota y persistencia local de sesion.
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -51,3 +60,4 @@ class AuthViewModel(private val repo: GymRepository) : ViewModel() {
         }
     }
 }
+

@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/data/local/dao/ExerciseDao.kt
+ * Proposito: Define operaciones de acceso a datos (DAO) para Room.
+ */
 package com.example.gymtrackpro.data.local.dao
 
 import androidx.room.*
@@ -6,9 +11,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ExerciseDao {
+    // [Req A - Read] Stream reactivo para UI (RecyclerView) desde Room.
     @Query("SELECT * FROM exercises")
     fun observeAll(): Flow<List<ExerciseEntity>>
 
+    // [Req A - Read] Consulta por ids para construir detalle de rutina/comunidad.
     @Query("SELECT * FROM exercises WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<String>): List<ExerciseEntity>
 
@@ -48,9 +55,12 @@ interface ExerciseDao {
     )
     suspend fun getUsedInRoutinesPaged(query: String, limit: Int, offset: Int): List<ExerciseEntity>
 
+    // [Req A - Create/Update] UPSERT del catalogo remoto cacheado localmente.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<ExerciseEntity>)
 
+    // [Req A - Delete] Limpieza total de cache.
     @Query("DELETE FROM exercises")
     suspend fun clear()
 }
+

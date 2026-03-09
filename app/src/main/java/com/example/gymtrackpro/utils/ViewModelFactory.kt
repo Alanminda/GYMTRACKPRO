@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/utils/ViewModelFactory.kt
+ * Proposito: Utilidades de inyeccion y fabrica de ViewModels.
+ */
 package com.example.gymtrackpro.utils
 
 import androidx.lifecycle.ViewModel
@@ -15,6 +20,8 @@ import com.example.gymtrackpro.ui.routines.RoutinePickerViewModel
 
 class ViewModelFactory(private val repo: GymRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        // [Req C - MVVM] Cada ViewModel recibe el mismo Repository,
+        // garantizando separacion View <-> ViewModel <-> Data.
         return when {
             modelClass.isAssignableFrom(AuthViewModel::class.java) -> AuthViewModel(repo) as T
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(repo) as T
@@ -29,3 +36,4 @@ class ViewModelFactory(private val repo: GymRepository) : ViewModelProvider.Fact
         }
     }
 }
+

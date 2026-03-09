@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt
+ * Proposito: Pantalla hub (comunidad) integrada en navegacion principal.
+ */
 package com.example.gymtrackpro.ui.placeholder
 
 import android.content.Intent
@@ -20,6 +25,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class ThirdHubActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding + RecyclerView para feed de comunidad.
     private lateinit var b: ActivityThirdHubBinding
     private val vm: CommunityViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
@@ -54,6 +60,7 @@ class ThirdHubActivity : AppCompatActivity() {
             selectedItemId = R.id.nav_third
         )
 
+        // [Req C/UI] Lista optimizada para scroll infinito.
         b.rvCommunity.layoutManager = LinearLayoutManager(this)
         b.rvCommunity.setHasFixedSize(true)
         b.rvCommunity.adapter = adapter
@@ -78,6 +85,7 @@ class ThirdHubActivity : AppCompatActivity() {
             }
         }
         vm.loading.observe(this) { isLoading ->
+            // [Req B] Indicadores diferenciados para carga inicial y paginacion.
             isLoadingNow = isLoading
             b.progressInitial.visibility = if (isLoading && currentItemsCount == 0) View.VISIBLE else View.GONE
             b.progressPaging.visibility = if (isLoading && currentItemsCount > 0) View.VISIBLE else View.GONE
@@ -113,3 +121,4 @@ class ThirdHubActivity : AppCompatActivity() {
         MainBottomNav.syncSelection(b.bottomNav, R.id.nav_third)
     }
 }
+

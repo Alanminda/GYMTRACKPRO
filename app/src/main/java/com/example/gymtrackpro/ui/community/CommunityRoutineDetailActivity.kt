@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/community/CommunityRoutineDetailActivity.kt
+ * Proposito: Feed de comunidad, favoritos y detalle de rutinas publicas.
+ */
 package com.example.gymtrackpro.ui.community
 
 import android.content.Intent
@@ -14,12 +19,14 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class CommunityRoutineDetailActivity : AppCompatActivity() {
 
+    // [Req C/UI] Binding + adapter para detalle de rutina publica.
     private lateinit var b: ActivityCommunityRoutineDetailBinding
     private val vm: CommunityRoutineDetailViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
     }
 
     private val adapter = ExerciseAdapter { exercise ->
+        // Navega al detalle del ejercicio reutilizando la misma pantalla de ejercicios.
         startActivity(Intent(this, ExerciseDetailActivity::class.java).apply {
             putExtra(ExerciseDetailActivity.EXTRA_ID, exercise.id)
             putExtra(ExerciseDetailActivity.EXTRA_NAME, exercise.name)
@@ -38,6 +45,7 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
         b = ActivityCommunityRoutineDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // Contexto recibido desde el feed de comunidad.
         val name = intent.getStringExtra(EXTRA_NAME).orEmpty()
         val ownerName = intent.getStringExtra(EXTRA_OWNER_NAME).orEmpty()
         val ids = intent.getStringArrayListExtra(EXTRA_EXERCISE_IDS).orEmpty()
@@ -51,11 +59,13 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
             "Por $ownerName  |  $expectedCount ejercicios  |  ${durationMinutes?.let { "$it min" } ?: "Tiempo N/D"}"
         }
 
+        // [Req C/UI] RecyclerView optimizada.
         b.rvExercises.layoutManager = LinearLayoutManager(this)
         b.rvExercises.setHasFixedSize(true)
         b.rvExercises.adapter = adapter
 
         vm.exercises.observe(this) { items ->
+            // Render de lista + conteo real cargado.
             adapter.submit(items)
             b.tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             val loadedCount = items.size
@@ -66,6 +76,7 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
             }
         }
         vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
+        // [Req B] Error visible si no se pudieron obtener detalles de ejercicios.
         vm.error.observe(this) { b.tvError.text = it ?: "" }
 
         vm.load(ids)
@@ -78,3 +89,4 @@ class CommunityRoutineDetailActivity : AppCompatActivity() {
         const val EXTRA_DURATION_MINUTES = "extra_duration_minutes"
     }
 }
+

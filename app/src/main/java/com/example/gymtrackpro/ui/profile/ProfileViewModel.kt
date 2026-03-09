@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/profile/ProfileViewModel.kt
+ * Proposito: Gestion de perfil y sesion del usuario.
+ */
 package com.example.gymtrackpro.ui.profile
 
 import androidx.lifecycle.LiveData
@@ -11,6 +16,7 @@ import kotlinx.coroutines.launch
 
 class ProfileViewModel(private val repo: GymRepository) : ViewModel() {
 
+    // [Req C - MVVM] Estado observable del perfil.
     private val _session = MutableLiveData<UserLocalEntity?>(null)
     val session: LiveData<UserLocalEntity?> = _session
 
@@ -31,6 +37,7 @@ class ProfileViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun loadProfile() {
         viewModelScope.launch {
+            // [Req B] Consulta perfil remoto; [Req C] fallback de sesion local.
             _loading.value = true
             _error.value = null
             try {
@@ -56,6 +63,7 @@ class ProfileViewModel(private val repo: GymRepository) : ViewModel() {
         }
 
         viewModelScope.launch {
+            // [Req B] Envio de datos de perfil a API.
             _loading.value = true
             _error.value = null
             try {
@@ -73,6 +81,7 @@ class ProfileViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun logout() {
         viewModelScope.launch {
+            // [Req A] Borra sesion local.
             repo.logout()
             _loggedOut.value = true
         }
@@ -82,3 +91,4 @@ class ProfileViewModel(private val repo: GymRepository) : ViewModel() {
         _message.value = null
     }
 }
+

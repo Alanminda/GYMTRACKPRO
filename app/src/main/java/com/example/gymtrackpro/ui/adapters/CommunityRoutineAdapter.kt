@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt
+ * Proposito: Renderiza listas RecyclerView y maneja interacciones de item.
+ */
 package com.example.gymtrackpro.ui.adapters
 
 import android.view.LayoutInflater
@@ -14,6 +19,7 @@ class CommunityRoutineAdapter(
     private val onToggleFavorite: (CommunityRoutineDto) -> Unit
 ) : ListAdapter<CommunityRoutineDto, CommunityRoutineAdapter.VH>(Diff) {
 
+    // [Req C/UI] DiffUtil para actualizar solo items cambiados.
     object Diff : DiffUtil.ItemCallback<CommunityRoutineDto>() {
         override fun areItemsTheSame(old: CommunityRoutineDto, new: CommunityRoutineDto): Boolean = old.id == new.id
         override fun areContentsTheSame(old: CommunityRoutineDto, new: CommunityRoutineDto): Boolean = old == new
@@ -27,6 +33,7 @@ class CommunityRoutineAdapter(
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
+        // [Req C/UI] Render de tarjeta comunitaria.
         val item = getItem(position)
         val exerciseCount = if (item.exerciseCount > 0) {
             item.exerciseCount
@@ -41,6 +48,7 @@ class CommunityRoutineAdapter(
         holder.b.tvFavorites.text = "Favoritos: ${item.favoritesCount}"
         val ctx = holder.b.root.context
         if (item.isFavorite) {
+            // Estado visual de favorito activo.
             holder.b.btnFavorite.setImageResource(android.R.drawable.btn_star_big_on)
             holder.b.btnFavorite.setColorFilter(ContextCompat.getColor(ctx, android.R.color.holo_orange_dark))
             holder.b.btnFavorite.alpha = 1f
@@ -50,6 +58,7 @@ class CommunityRoutineAdapter(
             holder.b.btnFavorite.alpha = 0.9f
         }
         holder.b.btnFavorite.setOnClickListener { onToggleFavorite(item) }
+        // Click de tarjeta abre detalle de rutina publica.
         holder.b.root.setOnClickListener { onClick(item) }
     }
 
@@ -58,3 +67,4 @@ class CommunityRoutineAdapter(
         return match?.groupValues?.getOrNull(1)?.toIntOrNull()
     }
 }
+
