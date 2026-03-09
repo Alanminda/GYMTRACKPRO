@@ -129,8 +129,12 @@ class HomeViewModel(private val repo: GymRepository) : ViewModel() {
                     return@launch
                 }
                 repo.syncForLoggedUser()
-                repo.shareRoutine(routineId)
-                _routineMessage.value = "Rutina compartida: $routineName"
+                val shared = repo.shareRoutine(routineId)
+                _routineMessage.value = if (shared.alreadyShared) {
+                    "Ya estaba compartida, se actualizo: $routineName"
+                } else {
+                    "Rutina compartida: $routineName"
+                }
             } catch (_: Exception) {
                 _routineMessage.value = "No se pudo compartir la rutina"
             } finally {

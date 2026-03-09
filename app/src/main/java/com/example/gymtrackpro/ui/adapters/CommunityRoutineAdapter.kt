@@ -2,6 +2,7 @@ package com.example.gymtrackpro.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -38,9 +39,16 @@ class CommunityRoutineAdapter(
         holder.b.tvExercises.text = "Ejercicios: $exerciseCount"
         holder.b.tvDuration.text = "Tiempo: ${duration?.let { "$it min" } ?: "N/D"}"
         holder.b.tvFavorites.text = "Favoritos: ${item.favoritesCount}"
-        holder.b.btnFavorite.setImageResource(
-            if (item.isFavorite) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off
-        )
+        val ctx = holder.b.root.context
+        if (item.isFavorite) {
+            holder.b.btnFavorite.setImageResource(android.R.drawable.btn_star_big_on)
+            holder.b.btnFavorite.setColorFilter(ContextCompat.getColor(ctx, android.R.color.holo_orange_dark))
+            holder.b.btnFavorite.alpha = 1f
+        } else {
+            holder.b.btnFavorite.setImageResource(android.R.drawable.btn_star_big_off)
+            holder.b.btnFavorite.setColorFilter(ContextCompat.getColor(ctx, android.R.color.darker_gray))
+            holder.b.btnFavorite.alpha = 0.9f
+        }
         holder.b.btnFavorite.setOnClickListener { onToggleFavorite(item) }
         holder.b.root.setOnClickListener { onClick(item) }
     }
