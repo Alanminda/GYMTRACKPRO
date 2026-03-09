@@ -351,13 +351,13 @@ class GymRepository(
         }
     }
 
-    suspend fun shareRoutine(routineId: Int) {
+    suspend fun shareRoutine(routineId: Int): CommunityRoutineDto {
         val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
         val routine = routineDao.getById(routineId) ?: throw IllegalStateException("Rutina no encontrada")
         if (routine.routineType != "OWN") throw IllegalStateException("Solo se comparten rutinas propias")
         val remoteId = routine.remoteId ?: throw IllegalStateException("Rutina aun no sincronizada")
 
-        api.shareRoutine(
+        return api.shareRoutine(
             bearer = "Bearer ${session.token}",
             id = remoteId
         )
@@ -416,12 +416,13 @@ class GymRepository(
         for (remote in favoriteRemote) {
             val existing = localByPublicId[remote.id]
             val localId = if (existing == null) {
+                val normalizedName = withDurationInName(remote.name, remote.durationMinutes)
                 routineDao.insert(
                     RoutineEntity(
                         publicRoutineId = remote.id,
                         routineType = "FAVORITE",
                         ownerName = remote.ownerName,
-                        name = remote.name,
+                        name = normalizedName,
                         userId = 1,
                         syncState = "SYNCED",
                         deleted = false,
@@ -429,9 +430,10 @@ class GymRepository(
                     )
                 ).toInt()
             } else {
+                val normalizedName = withDurationInName(remote.name, remote.durationMinutes)
                 routineDao.update(
                     existing.copy(
-                        name = remote.name,
+                        name = normalizedName,
                         ownerName = remote.ownerName,
                         routineType = "FAVORITE",
                         syncState = "SYNCED",
@@ -500,5 +502,11 @@ class GymRepository(
 
         val refreshed = exerciseDao.getByIds(exerciseIds).associateBy { it.id }
         return exerciseIds.mapNotNull { refreshed[it] }
+    }
+
+    private fun withDurationInName(name: String, durationMinutes: Int?): String {
+        if (durationMinutes == null || durationMinutes <= 0) return name
+        if (Regex("\\(\\d+\\s*min\\)", RegexOption.IGNORE_CASE).containsMatchIn(name)) return name
+        return "$name (${durationMinutes} min)"
     }
 }

@@ -275,6 +275,13 @@ function parseDurationMinutesFromName(name) {
   return Number.isFinite(value) ? value : null;
 }
 
+function resolveDurationMinutes(name, exerciseCount) {
+  const parsed = parseDurationMinutesFromName(name);
+  if (parsed != null) return parsed;
+  const count = Math.max(Number(exerciseCount) || 0, 1);
+  return count * 10;
+}
+
 app.post("/auth/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -670,7 +677,9 @@ app.post("/routines/:id/share", auth, async (req, res) => {
     if (existingError) return res.status(500).json({ message: "Error al compartir rutina" });
 
     let shared;
+    let alreadyShared = false;
     if (existing?.id) {
+      alreadyShared = true;
       const { data, error } = await supabase
         .from("public_routines")
         .update(payload)
@@ -695,7 +704,8 @@ app.post("/routines/:id/share", auth, async (req, res) => {
       ownerName: shared.owner_name || "Usuario",
       exerciseIds: normalizeExerciseIds(shared.exercise_ids),
       exerciseCount: normalizeExerciseIds(shared.exercise_ids).length,
-      durationMinutes: parseDurationMinutesFromName(shared.name),
+      durationMinutes: resolveDurationMinutes(shared.name, normalizeExerciseIds(shared.exercise_ids).length),
+      alreadyShared,
       isFavorite: false,
       favoritesCount: 0,
     });
@@ -726,7 +736,7 @@ app.get("/community/routines", auth, async (req, res) => {
     if (ids.length > 0) {
       const { data: favs, error: favError } = await supabase
         .from("public_routine_favorites")
-        .select("public_routine_id,user_id")
+        .select("public_routine_id")
         .in("public_routine_id", ids);
       if (favError) return res.status(500).json({ message: "Error al obtener favoritos" });
 
@@ -734,11 +744,16 @@ app.get("/community/routines", auth, async (req, res) => {
       for (const row of favs || []) {
         const key = row.public_routine_id;
         countMap.set(key, (countMap.get(key) || 0) + 1);
-        if (row.user_id === req.user.userId) {
-          favoriteIdsByUser.add(key);
-        }
       }
       favoritesByRoutineId = countMap;
+
+      const { data: mine, error: mineError } = await supabase
+        .from("public_routine_favorites")
+        .select("public_routine_id")
+        .in("public_routine_id", ids)
+        .eq("user_id", req.user.userId);
+      if (mineError) return res.status(500).json({ message: "Error al obtener favoritos" });
+      favoriteIdsByUser = new Set((mine || []).map((row) => String(row.public_routine_id)));
     }
 
     const normalizeRow = (r) => {
@@ -749,10 +764,10 @@ app.get("/community/routines", auth, async (req, res) => {
         ownerName: r.owner_name || "Usuario",
         exerciseIds: normalizedIds,
         exerciseCount: normalizedIds.length,
-        durationMinutes: parseDurationMinutesFromName(r.name),
+        durationMinutes: resolveDurationMinutes(r.name, normalizedIds.length),
         updatedAt: r.updated_at || null,
         favoritesCount: favoritesByRoutineId.get(r.id) || 0,
-        isFavorite: favoriteIdsByUser.has(r.id),
+        isFavorite: favoriteIdsByUser.has(String(r.id)),
       };
     };
 
@@ -895,7 +910,7 @@ app.get("/community/favorites", auth, async (req, res) => {
           ownerName: r.owner_name || "Usuario",
           exerciseIds: normalizedIds,
           exerciseCount: normalizedIds.length,
-          durationMinutes: parseDurationMinutesFromName(r.name),
+          durationMinutes: resolveDurationMinutes(r.name, normalizedIds.length),
           favoritesCount: countMap.get(r.id) || 0,
           isFavorite: true,
         };

@@ -21,6 +21,27 @@ Este archivo lleva un registro exacto de cambios en el proyecto.
 
 ## Historial
 
+### 2026-03-08 21:xx - Community Favorites/Share Reliability + Duration Sync - `fix`
+
+- Resumen: se corrigen tres incidencias: estado de estrella en comunidad, feedback de compartir rutina y tiempo `N/D` en favoritas.
+- Archivos modificados:
+  - `backend/index.js` -> `isFavorite` ahora se calcula con consulta dedicada por usuario; share devuelve `alreadyShared`; duracion usa `resolveDurationMinutes(...)` para evitar nulos.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/RoutineDtos.kt` -> `CommunityRoutineDto` agrega `alreadyShared`.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> `shareRoutine(...)` retorna respuesta remota y sincronizacion de favoritas guarda nombre con duracion (`withDurationInName`).
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> mensaje de share diferencia entre primera vez y ya compartida (actualizada).
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt` -> icono estrella con estado visual mas claro (hueca gris vs llena naranja).
+- Motivo:
+  - El usuario reporto: estrellas todas llenas, compartir sin feedback claro y tiempo `N/D` en favoritas.
+- Impacto:
+  - Estado favorito visual y logico mas confiable.
+  - Share informa si fue nuevo o actualizacion.
+  - Favoritas muestran tiempo tambien al sincronizar.
+- Verificacion:
+  - `node --check backend/index.js` valido.
+  - Prueba funcional tras redeploy pendiente.
+
+---
+
 ### 2026-03-08 21:xx - Community Star UX + Search & Sort Filters - `feat`
 
 - Resumen: en comunidad se fortalece UX de estrella (hueca/llena con aviso) y se agregan buscador por titulo + filtros de orden.
