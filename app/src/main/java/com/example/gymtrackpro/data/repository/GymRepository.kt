@@ -355,10 +355,13 @@ class GymRepository(
         val session = userDao.getSession() ?: throw IllegalStateException("No hay sesion")
         val routine = routineDao.getById(routineId) ?: throw IllegalStateException("Rutina no encontrada")
         if (routine.routineType != "OWN") throw IllegalStateException("Solo se comparten rutinas propias")
-        val remoteId = routine.remoteId ?: throw IllegalStateException("Rutina aun no sincronizada")
+        val bearer = "Bearer ${session.token}"
+
+        val remoteId = ensureRemoteRoutineId(routine, bearer)
+        syncRoutineExercisesBySet(routineId = routine.id, remoteRoutineId = remoteId, bearer = bearer)
 
         return api.shareRoutine(
-            bearer = "Bearer ${session.token}",
+            bearer = bearer,
             id = remoteId
         )
     }
@@ -502,6 +505,17 @@ class GymRepository(
 
         val refreshed = exerciseDao.getByIds(exerciseIds).associateBy { it.id }
         return exerciseIds.mapNotNull { refreshed[it] }
+    }
+
+    private suspend fun ensureRemoteRoutineId(routine: RoutineEntity, bearer: String): String {
+        if (!routine.remoteId.isNullOrBlank()) return routine.remoteId
+
+        val remote = api.createRoutine(
+            bearer = bearer,
+            body = RoutineUpsertRequest(name = routine.name)
+        )
+        routineDao.markSynced(localId = routine.id, remoteId = remote._id)
+        return remote._id
     }
 
     private fun withDurationInName(name: String, durationMinutes: Int?): String {

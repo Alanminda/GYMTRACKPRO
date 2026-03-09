@@ -8,8 +8,8 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gymtrackpro.R
 import com.example.gymtrackpro.data.local.entities.RoutineEntity
@@ -37,7 +37,7 @@ class HomeActivity : AppCompatActivity() {
             })
         },
         onDelete = { routine ->
-            confirmDeleteRoutine(routine)
+            confirmDeleteRoutine(routine, NO_POSITION)
         },
         onShare = { routine ->
             vm.shareRoutine(routine.id, routine.name)
@@ -50,7 +50,7 @@ class HomeActivity : AppCompatActivity() {
         setContentView(b.root)
 
         b.rvExercises.adapter = adapter
-        (b.rvExercises.itemAnimator as? DefaultItemAnimator)?.supportsChangeAnimations = false
+        b.rvExercises.itemAnimator = null
         attachRoutineSwipeActions()
         MainBottomNav.bind(this, b.bottomNav, R.id.nav_home)
         b.toggleRoutineCategory.check(R.id.btnCategoryOwn)
@@ -75,7 +75,10 @@ class HomeActivity : AppCompatActivity() {
             adapter.closeActions()
         }
 
-        vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
+        vm.loading.observe(this) { isLoading ->
+            val hasItems = vm.routines.value?.isNotEmpty() == true
+            b.progress.visibility = if (isLoading && !hasItems) View.VISIBLE else View.GONE
+        }
         vm.error.observe(this) { b.tvError.text = it ?: "" }
         vm.routineMessage.observe(this) { msg ->
             if (!msg.isNullOrBlank()) {
@@ -89,6 +92,17 @@ class HomeActivity : AppCompatActivity() {
 
     private fun attachRoutineSwipeActions() {
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun getSwipeDirs(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                val pos = viewHolder.bindingAdapterPosition
+                if (pos == RecyclerView.NO_POSITION) return 0
+                val routine = adapter.getItemAt(pos) ?: return 0
+                if (routine.routineType != "OWN") return 0
+                return ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            }
+
             override fun onMove(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder,
@@ -96,19 +110,48 @@ class HomeActivity : AppCompatActivity() {
             ): Boolean = false
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val pos = viewHolder.bindingAdapterPosition
-                if (pos == RecyclerView.NO_POSITION) return
-                val routine = adapter.getItemAt(pos) ?: return
+                val holder = viewHolder as? RoutineAdapter.VH
+                resetSwipedHolderVisual(holder)
+
+                if (viewHolder is RoutineAdapter.VH) {
+                    ItemTouchHelper.Callback.getDefaultUIUtil().clearView(viewHolder.b.foregroundContainer)
+                    viewHolder.b.btnDelete.alpha = 1f
+                    viewHolder.b.btnShare.alpha = 1f
+                }
+                val pos = when {
+                    viewHolder.bindingAdapterPosition != RecyclerView.NO_POSITION -> viewHolder.bindingAdapterPosition
+                    viewHolder.absoluteAdapterPosition != RecyclerView.NO_POSITION -> viewHolder.absoluteAdapterPosition
+                    viewHolder.layoutPosition != RecyclerView.NO_POSITION -> viewHolder.layoutPosition
+                    else -> RecyclerView.NO_POSITION
+                }
+                if (pos == RecyclerView.NO_POSITION) {
+                    forceRebindRoutines()
+                    return
+                }
+                val routine = adapter.getItemAt(pos)
+                if (routine == null) {
+                    forceRebindRoutines()
+                    return
+                }
                 if (routine.routineType != "OWN") {
-                    adapter.closeActions()
-                    adapter.resetSwipe(pos)
+                    forceRebindRoutines()
                     return
                 }
                 if (direction == ItemTouchHelper.LEFT) {
-                    adapter.toggleActions(pos)
+                    vm.shareRoutine(routine.id, routine.name)
+                    forceRebindRoutines()
                 } else {
-                    adapter.closeActions()
+                    confirmDeleteRoutine(routine, pos)
+                    forceRebindRoutines()
                 }
+            }
+
+            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                if (viewHolder is RoutineAdapter.VH) {
+                    ItemTouchHelper.Callback.getDefaultUIUtil()
+                        .onSelected(viewHolder.b.foregroundContainer)
+                }
+                super.onSelectedChanged(viewHolder, actionState)
             }
 
             override fun onChildDraw(
@@ -129,40 +172,106 @@ class HomeActivity : AppCompatActivity() {
                 if (position == RecyclerView.NO_POSITION) return
                 val routine = adapter.getItemAt(position)
                 if (routine?.routineType != "OWN") {
-                    viewHolder.b.foregroundContainer.translationX = 0f
+                    ItemTouchHelper.Callback.getDefaultUIUtil().onDraw(
+                        c,
+                        recyclerView,
+                        viewHolder.b.foregroundContainer,
+                        0f,
+                        dY,
+                        actionState,
+                        isCurrentlyActive
+                    )
                     return
                 }
 
-                val maxReveal = adapter.revealWidthPx
-                val openOffset = if (adapter.isActionsOpen(position)) -maxReveal else 0f
-                val translated = (openOffset + dX).coerceIn(-maxReveal, 0f)
-                viewHolder.b.foregroundContainer.translationX = translated
+                val maxShift = recyclerView.width.toFloat()
+                val translated = dX.coerceIn(-maxShift, maxShift)
+                ItemTouchHelper.Callback.getDefaultUIUtil().onDraw(
+                    c,
+                    recyclerView,
+                    viewHolder.b.foregroundContainer,
+                    translated,
+                    dY,
+                    actionState,
+                    isCurrentlyActive
+                )
+                when {
+                    translated > 0f -> {
+                        viewHolder.b.btnDelete.alpha = 1f
+                        viewHolder.b.btnShare.alpha = 0f
+                    }
+                    translated < 0f -> {
+                        viewHolder.b.btnDelete.alpha = 0f
+                        viewHolder.b.btnShare.alpha = 1f
+                    }
+                    else -> {
+                        viewHolder.b.btnDelete.alpha = 1f
+                        viewHolder.b.btnShare.alpha = 1f
+                    }
+                }
             }
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 if (viewHolder !is RoutineAdapter.VH) return
-                val position = viewHolder.bindingAdapterPosition
-                if (position == RecyclerView.NO_POSITION) return
-                val target = if (adapter.isActionsOpen(position)) -adapter.revealWidthPx else 0f
-                viewHolder.b.foregroundContainer.animate().translationX(target).setDuration(120).start()
+                ItemTouchHelper.Callback.getDefaultUIUtil().clearView(viewHolder.b.foregroundContainer)
+                viewHolder.b.btnDelete.alpha = 1f
+                viewHolder.b.btnShare.alpha = 1f
             }
 
-            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = 0.25f
+            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = 0.45f
+
+            override fun getAnimationDuration(
+                recyclerView: RecyclerView,
+                animationType: Int,
+                animateDx: Float,
+                animateDy: Float
+            ): Long = 90L
         }
 
         ItemTouchHelper(callback).attachToRecyclerView(b.rvExercises)
     }
 
-    private fun confirmDeleteRoutine(routine: RoutineEntity) {
+    private fun confirmDeleteRoutine(routine: RoutineEntity, position: Int) {
         AlertDialog.Builder(this)
             .setTitle("Eliminar rutina")
             .setMessage("Se eliminara \"${routine.name}\".")
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton("Cancelar") { _, _ ->
+                if (position != NO_POSITION) {
+                    forceRebindRoutines()
+                }
+            }
             .setPositiveButton("Eliminar") { _, _ ->
                 vm.deleteRoutine(routine.id)
+                forceRebindRoutines()
+            }
+            .setOnCancelListener {
+                if (position != NO_POSITION) {
+                    forceRebindRoutines()
+                }
             }
             .show()
+    }
+
+    private fun resetSwipedHolderVisual(holder: RoutineAdapter.VH?) {
+        if (holder == null) return
+        ItemTouchHelper.Callback.getDefaultUIUtil().clearView(holder.b.foregroundContainer)
+        holder.itemView.translationX = 0f
+        holder.b.foregroundContainer.translationX = 0f
+        holder.b.btnDelete.alpha = 1f
+        holder.b.btnShare.alpha = 1f
+    }
+
+    private fun forceRebindRoutines() {
+        b.rvExercises.post {
+            adapter.notifyDataSetChanged()
+            val childCount = b.rvExercises.childCount
+            for (i in 0 until childCount) {
+                val child = b.rvExercises.getChildAt(i)
+                val holder = b.rvExercises.getChildViewHolder(child) as? RoutineAdapter.VH
+                resetSwipedHolderVisual(holder)
+            }
+        }
     }
 
     override fun onResume() {
