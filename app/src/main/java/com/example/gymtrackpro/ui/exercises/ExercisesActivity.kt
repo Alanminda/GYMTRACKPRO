@@ -53,9 +53,11 @@ class ExercisesActivity : AppCompatActivity() {
         if (isRoutineSelectionMode) {
             b.bottomNav.visibility = View.GONE
             b.tvSelectModeHint.visibility = View.VISIBLE
+            vm.setSelectionMode(true)
         } else {
             MainBottomNav.bind(this, b.bottomNav, R.id.nav_exercises)
             b.tvSelectModeHint.visibility = View.GONE
+            vm.setSelectionMode(false)
         }
         val lm = b.rvExercises.layoutManager as LinearLayoutManager
         b.rvExercises.addOnScrollListener(object : RecyclerView.OnScrollListener() {

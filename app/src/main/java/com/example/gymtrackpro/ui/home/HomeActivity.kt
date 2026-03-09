@@ -1,6 +1,9 @@
 package com.example.gymtrackpro.ui.home
 
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
@@ -23,6 +26,16 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var b: ActivityHomeBinding
+    private lateinit var connectivityManager: ConnectivityManager
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            runOnUiThread { vm.onConnectivityChanged(true) }
+        }
+
+        override fun onLost(network: Network) {
+            runOnUiThread { vm.onConnectivityChanged(isNetworkAvailable()) }
+        }
+    }
 
     private val vm: HomeViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
@@ -48,6 +61,7 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(b.root)
+        connectivityManager = getSystemService(ConnectivityManager::class.java)
 
         b.rvExercises.adapter = adapter
         b.rvExercises.itemAnimator = null
@@ -87,7 +101,13 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
-        vm.syncData()
+        startNetworkMonitoring()
+        vm.onConnectivityChanged(isNetworkAvailable())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
     }
 
     private fun attachRoutineSwipeActions() {
@@ -369,5 +389,16 @@ class HomeActivity : AppCompatActivity() {
                 )
             }
             .show()
+    }
+
+    private fun startNetworkMonitoring() {
+        runCatching { connectivityManager.registerDefaultNetworkCallback(networkCallback) }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val active = connectivityManager.activeNetwork ?: return false
+        val caps = connectivityManager.getNetworkCapabilities(active) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 }

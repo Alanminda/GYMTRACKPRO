@@ -111,6 +111,94 @@ Se renderizan asi:
 
 ## Historial
 
+### 2026-03-09 00:xx - Guest Online Access (Exercises + Community) - `fix`
+
+- Resumen: se habilita carga de ejercicios y comunidad en modo invitado con conexion (sin token), manteniendo acciones privadas con autenticacion.
+- Archivos modificados:
+  - `backend/index.js` -> nuevo `optionalAuth`; rutas publicas explicitas `GET /public/exercises`, `GET /public/exercises/:id`, `GET /public/community/routines`; rutas originales tambien aceptan invitado en lectura.
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt` -> headers `Authorization` opcionales en endpoints publicos.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> en invitado se usan endpoints `/public/*` con fallback a endpoints antiguos; detalle por IDs funciona tambien para invitado.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/ExerciseDao.kt` -> paginacion de cache local completa para invitado offline.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> diferencia invitado online/offline: online remoto, offline cache local con mensaje claro.
+- Motivo:
+  - Corregir que en modo invitado no cargaban ejercicios/comunidad aun con internet.
+- Impacto:
+  - Invitado puede explorar ejercicios y comunidad.
+  - Invitado sin red: ejercicios muestran cache local disponible (si existe).
+  - Favoritos/compartir siguen pidiendo sesion.
+- Verificacion:
+  - Probar en app: entrar como invitado con red y abrir `Exercises` y `Community`.
+
+---
+
+### 2026-03-08 23:xx - Media Visibility in Light Theme - `fix`
+
+- Resumen: se mejora visualizacion de imagen/gif en detalle de ejercicio para tema claro y oscuro.
+- Archivos modificados:
+  - `app/src/main/res/layout/activity_exercise_detail.xml` -> fondo contrastado en card e `ImageView` de media.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> prioridad de carga via proxy backend (`/exercises/{id}/media`) con fallback a `gifUrl` directo.
+- Motivo:
+  - Algunos recursos de ExerciseDB tienen transparencia y en tema claro podian verse "en blanco" o parecer no cargados.
+- Impacto:
+  - Mejor contraste de media en modo claro.
+  - Carga mas estable al priorizar proxy propio.
+- Verificacion:
+  - Prueba recomendada en dispositivo: abrir detalle de varios ejercicios en modo claro/oscuro.
+
+---
+
+### 2026-03-08 23:xx - Build + Media Fixes - `fix`
+
+- Resumen: se corrige error de compilacion en `ExercisesViewModel`, se elimina warning de Room schema y se mejora fallback de carga de imagen/gif en detalle de ejercicio.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> `throw e` correcto dentro de `catch`.
+  - `app/src/main/java/com/example/gymtrackpro/data/local/db/AppDatabase.kt` -> `exportSchema = false`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExerciseDetailActivity.kt` -> prioridad a `gifUrl` directo y fallback al proxy `/exercises/{id}/media`.
+- Motivo:
+  - Resolver fallo de compilacion y aumentar tasa de carga de media en red.
+- Impacto:
+  - Build vuelve a compilar en esa clase.
+  - Menos fallos visuales de media al abrir detalle de ejercicios.
+- Verificacion:
+  - Compilacion local en Android Studio recomendada.
+
+---
+
+### 2026-03-08 23:xx - Offline Add-to-Routine from Local Cache - `feat`
+
+- Resumen: al anadir ejercicios a una rutina sin internet, la pantalla de seleccion usa cache local (ejercicios ya usados en otras rutinas) con paginacion.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/ExerciseDao.kt` -> nueva query paginada `getUsedInRoutinesPaged(...)` con filtro por texto.
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt` -> nuevo `fetchExercisesPageFromLocalRoutineCache(...)`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt` -> fallback local solo en modo seleccion de rutina cuando falla red.
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt` -> se informa al ViewModel cuando la pantalla esta en modo seleccion de rutina.
+- Motivo:
+  - Permitir agregar ejercicios a rutinas aunque no haya conexion, reutilizando datos locales ya guardados.
+- Impacto:
+  - Sin red y en modo "anadir a rutina": se muestran ejercicios locales de rutinas existentes.
+  - Con red o en catalogo normal: se mantiene flujo remoto actual.
+- Verificacion:
+  - Prueba en dispositivo recomendada: desconectar red, abrir seleccion de ejercicios desde una rutina y confirmar listado/paginacion local.
+
+---
+
+### 2026-03-08 23:xx - Home Offline/Reconnect UX - `fix`
+
+- Resumen: Home ahora detecta conectividad para mostrar estado local sin red y resincronizar automaticamente al recuperar internet.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt` -> monitoreo de red con `ConnectivityManager.NetworkCallback`.
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeViewModel.kt` -> nuevo `onConnectivityChanged(...)` para mostrar mensaje offline y disparar `syncData()` al reconectar.
+  - `app/src/main/AndroidManifest.xml` -> agregado permiso `ACCESS_NETWORK_STATE`.
+- Motivo:
+  - Corregir que Home no avisaba correctamente modo local sin internet y no se resincronizaba al volver la red.
+- Impacto:
+  - Sin red: se muestra `Sin conexion: usando memoria local en Home`.
+  - Con red restaurada: Home vuelve a sincronizar sin reiniciar la app.
+- Verificacion:
+  - Compilacion/prueba en dispositivo pendiente.
+
+---
+
 ### 2026-03-08 23:xx - README Expansion Profesional (Descripcion/DER/Capturas) - `docs`
 
 - Resumen: se amplia el README con descripcion funcional completa, modulos, arquitectura, flujo de uso y guia explicita de rutas para DER/capturas.

@@ -23,7 +23,14 @@ interface ApiService {
 
     @GET("exercises")
     suspend fun getExercises(
-        @Header("Authorization") bearer: String,
+        @Header("Authorization") bearer: String?,
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int,
+        @Query("q") q: String? = null
+    ): List<ExerciseDto>
+
+    @GET("public/exercises")
+    suspend fun getPublicExercises(
         @Query("limit") limit: Int,
         @Query("offset") offset: Int,
         @Query("q") q: String? = null
@@ -31,7 +38,12 @@ interface ApiService {
 
     @GET("exercises/{id}")
     suspend fun getExerciseById(
-        @Header("Authorization") bearer: String,
+        @Header("Authorization") bearer: String?,
+        @Path("id") id: String
+    ): ExerciseDto
+
+    @GET("public/exercises/{id}")
+    suspend fun getPublicExerciseById(
         @Path("id") id: String
     ): ExerciseDto
 
@@ -72,7 +84,15 @@ interface ApiService {
 
     @GET("community/routines")
     suspend fun getCommunityRoutines(
-        @Header("Authorization") bearer: String,
+        @Header("Authorization") bearer: String?,
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int,
+        @Query("q") q: String? = null,
+        @Query("sort") sort: String? = null
+    ): List<CommunityRoutineDto>
+
+    @GET("public/community/routines")
+    suspend fun getPublicCommunityRoutines(
         @Query("limit") limit: Int,
         @Query("offset") offset: Int,
         @Query("q") q: String? = null,

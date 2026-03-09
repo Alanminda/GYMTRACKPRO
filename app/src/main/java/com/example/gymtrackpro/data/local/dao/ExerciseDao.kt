@@ -12,6 +12,42 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<String>): List<ExerciseEntity>
 
+    @Query(
+        """
+        SELECT *
+        FROM exercises
+        WHERE (
+          :query = ''
+          OR lower(name) LIKE '%' || lower(:query) || '%'
+          OR lower(muscleGroup) LIKE '%' || lower(:query) || '%'
+          OR lower(COALESCE(target, '')) LIKE '%' || lower(:query) || '%'
+          OR lower(COALESCE(bodyPart, '')) LIKE '%' || lower(:query) || '%'
+          OR lower(COALESCE(equipment, '')) LIKE '%' || lower(:query) || '%'
+        )
+        ORDER BY name ASC
+        LIMIT :limit OFFSET :offset
+        """
+    )
+    suspend fun getAllPaged(query: String, limit: Int, offset: Int): List<ExerciseEntity>
+
+    @Query(
+        """
+        SELECT DISTINCT e.*
+        FROM exercises e
+        INNER JOIN routine_exercise re ON re.exerciseId = e.id
+        WHERE re.deleted = 0
+          AND (
+            :query = ''
+            OR lower(e.name) LIKE '%' || lower(:query) || '%'
+            OR lower(e.muscleGroup) LIKE '%' || lower(:query) || '%'
+            OR lower(COALESCE(e.target, '')) LIKE '%' || lower(:query) || '%'
+          )
+        ORDER BY e.name ASC
+        LIMIT :limit OFFSET :offset
+        """
+    )
+    suspend fun getUsedInRoutinesPaged(query: String, limit: Int, offset: Int): List<ExerciseEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<ExerciseEntity>)
 

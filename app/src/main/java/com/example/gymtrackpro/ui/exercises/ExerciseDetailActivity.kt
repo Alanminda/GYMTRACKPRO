@@ -134,10 +134,11 @@ class ExerciseDetailActivity : AppCompatActivity() {
                 .thumbnail(0.25f)
                 .placeholder(android.R.drawable.ic_menu_gallery)
 
-            if (directUrl.isNotBlank() && directUrl != primaryUrl) {
+            val fallbackUrl = if (primaryUrl == proxyUrl) directUrl else proxyUrl
+            if (fallbackUrl.isNotBlank() && fallbackUrl != primaryUrl) {
                 req = req.error(
                     Glide.with(this)
-                        .load(directUrl)
+                        .load(fallbackUrl)
                         .thumbnail(0.25f)
                 )
             }

@@ -29,9 +29,19 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
     private var searchJob: Job? = null
     private var loadJob: Job? = null
     private var generation: Int = 0
+    private var selectionMode: Boolean = false
+    private var localOnlyMode: Boolean = false
+    private var guestMode: Boolean = false
+
+    fun setSelectionMode(enabled: Boolean) {
+        selectionMode = enabled
+    }
 
     fun loadExercises() {
-        resetAndLoad()
+        viewModelScope.launch {
+            guestMode = !repo.isLoggedIn()
+            resetAndLoad()
+        }
     }
 
     fun onQueryChanged(text: String) {
@@ -56,6 +66,7 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
         loadJob?.cancel()
         loadingPage = false
         _loading.value = false
+        localOnlyMode = false
         offset = 0
         endReached = false
         _exercises.value = emptyList()
@@ -71,13 +82,61 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
             _loading.value = true
             _error.value = null
             try {
-                val page = repo.fetchExercisesPageFromApi(
-                    query = query.takeIf { it.isNotBlank() },
-                    limit = currentPageSize(),
-                    offset = offset
-                )
+                val page = if (localOnlyMode) {
+                    if (selectionMode) {
+                        repo.fetchExercisesPageFromLocalRoutineCache(
+                            query = query.takeIf { it.isNotBlank() },
+                            limit = currentPageSize(),
+                            offset = offset
+                        )
+                    } else {
+                        repo.fetchExercisesPageFromLocalCache(
+                            query = query.takeIf { it.isNotBlank() },
+                            limit = currentPageSize(),
+                            offset = offset
+                        )
+                    }
+                } else {
+                    try {
+                        repo.fetchExercisesPageFromApi(
+                            query = query.takeIf { it.isNotBlank() },
+                            limit = currentPageSize(),
+                            offset = offset
+                        )
+                    } catch (e: Exception) {
+                        if (!selectionMode && !guestMode) throw e
+                        localOnlyMode = true
+                        if (selectionMode) {
+                            repo.fetchExercisesPageFromLocalRoutineCache(
+                                query = query.takeIf { it.isNotBlank() },
+                                limit = currentPageSize(),
+                                offset = offset
+                            )
+                        } else {
+                            repo.fetchExercisesPageFromLocalCache(
+                                query = query.takeIf { it.isNotBlank() },
+                                limit = currentPageSize(),
+                                offset = offset
+                            )
+                        }
+                    }
+                }
 
                 if (currentGeneration != generation) return@launch
+
+                if (localOnlyMode) {
+                    _error.value = when {
+                        selectionMode && offset == 0 && page.isEmpty() ->
+                            "Sin red: no hay ejercicios locales disponibles para anadir"
+                        selectionMode ->
+                            "Sin red: usando ejercicios locales de tus rutinas"
+                        guestMode && offset == 0 && page.isEmpty() ->
+                            "Modo invitado sin red: no hay cache local de ejercicios"
+                        guestMode ->
+                            "Modo invitado sin red: mostrando cache local de ejercicios"
+                        else -> null
+                    }
+                }
 
                 if (page.isEmpty()) {
                     endReached = true
@@ -88,9 +147,13 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
                 offset += page.size
             } catch (_: CancellationException) {
                 // Se cancela cuando cambia la busqueda o se reinicia paginacion.
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 if (currentGeneration != generation) return@launch
-                _error.value = "No se pudieron cargar ejercicios"
+                _error.value = when {
+                    guestMode -> "Modo invitado online no disponible temporalmente"
+                    selectionMode -> "No se pudieron cargar ejercicios para anadir"
+                    else -> "No se pudieron cargar ejercicios"
+                }
             } finally {
                 if (currentGeneration != generation) return@launch
                 loadingPage = false
