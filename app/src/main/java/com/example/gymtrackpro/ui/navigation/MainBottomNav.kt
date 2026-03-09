@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/navigation/MainBottomNav.kt
+ * Proposito: Navegacion inferior compartida entre pantallas principales.
+ */
 package com.example.gymtrackpro.ui.navigation
 
 import android.content.Intent
@@ -16,6 +21,7 @@ object MainBottomNav {
         bottomNav: BottomNavigationView,
         selectedItemId: Int
     ) {
+        // [Req C/UI] Hub de navegacion fijo entre pantallas principales.
         syncSelection(bottomNav, selectedItemId)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -69,8 +75,10 @@ object MainBottomNav {
     }
 
     fun syncSelection(bottomNav: BottomNavigationView, selectedItemId: Int) {
+        // Mantiene resaltado correcto del tab activo.
         if (bottomNav.selectedItemId != selectedItemId) {
             bottomNav.menu.findItem(selectedItemId)?.isChecked = true
         }
     }
 }
+

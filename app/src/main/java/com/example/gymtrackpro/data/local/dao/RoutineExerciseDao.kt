@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/data/local/dao/RoutineExerciseDao.kt
+ * Proposito: Define operaciones de acceso a datos (DAO) para Room.
+ */
 package com.example.gymtrackpro.data.local.dao
 
 import androidx.room.Dao
@@ -9,6 +14,7 @@ import com.example.gymtrackpro.data.local.entities.RoutineExerciseEntity
 @Dao
 interface RoutineExerciseDao {
 
+    // [Req A - Read] Ejercicios activos de una rutina.
     @Query("SELECT * FROM routine_exercise WHERE routineId = :routineId AND deleted = 0")
     suspend fun getActiveByRoutine(routineId: Int): List<RoutineExerciseEntity>
 
@@ -21,6 +27,7 @@ interface RoutineExerciseDao {
     @Query("SELECT * FROM routine_exercise WHERE syncState != 'SYNCED' OR deleted = 1")
     suspend fun getPendingSync(): List<RoutineExerciseEntity>
 
+    // [Req A - Create/Update] UPSERT de relacion rutina-ejercicio.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: RoutineExerciseEntity)
 
@@ -44,6 +51,8 @@ interface RoutineExerciseDao {
         updatedAt: Long = System.currentTimeMillis()
     )
 
+    // [Req A - Delete] Borrado fisico por rutina.
     @Query("DELETE FROM routine_exercise WHERE routineId = :routineId")
     suspend fun hardDeleteByRoutine(routineId: Int)
 }
+

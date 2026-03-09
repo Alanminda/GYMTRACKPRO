@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt
+ * Proposito: Renderiza listas RecyclerView y maneja interacciones de item.
+ */
 package com.example.gymtrackpro.ui.adapters
 
 import android.view.LayoutInflater
@@ -14,9 +19,11 @@ class RoutineAdapter(
     private val onDelete: (RoutineEntity) -> Unit,
     private val onShare: (RoutineEntity) -> Unit
 ) : ListAdapter<RoutineEntity, RoutineAdapter.VH>(Diff) {
+    // Ancho objetivo de reveal para acciones swipe (botones laterales).
     var revealWidthPx: Float = 0f
         private set
 
+    // [Req C/UI] DiffUtil para minimizar redraw de tarjetas.
     object Diff : DiffUtil.ItemCallback<RoutineEntity>() {
         override fun areItemsTheSame(old: RoutineEntity, new: RoutineEntity) = old.id == new.id
         override fun areContentsTheSame(old: RoutineEntity, new: RoutineEntity) = old == new
@@ -34,6 +41,7 @@ class RoutineAdapter(
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
+        // Render de rutina propia/favorita con metadatos de duracion.
         holder.itemView.translationX = 0f
         val item = getItem(position)
         val duration = parseDurationFromName(item.name)
@@ -50,12 +58,15 @@ class RoutineAdapter(
         applyRevealVisualState(holder, position)
 
         holder.b.foregroundContainer.setOnClickListener {
+            // Abre detalle de rutina.
             onClick(item)
         }
         holder.b.btnDelete.setOnClickListener {
+            // Accion delete/quitar favorito.
             onDelete(item)
         }
         holder.b.btnShare.setOnClickListener {
+            // Accion compartir rutina.
             onShare(item)
         }
     }
@@ -88,8 +99,10 @@ class RoutineAdapter(
     }
 
     private fun applyRevealVisualState(holder: VH, position: Int) {
+        // Estado base (cerrado) para evitar bloqueos visuales de swipe.
         holder.b.foregroundContainer.translationX = 0f
         holder.b.btnDelete.alpha = 1f
         holder.b.btnShare.alpha = 1f
     }
 }
+

@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/data/remote/api/ApiService.kt
+ * Proposito: Define cliente y contratos Retrofit para backend remoto.
+ */
 package com.example.gymtrackpro.data.remote.api
 
 import com.example.gymtrackpro.data.remote.dto.*
@@ -6,12 +11,15 @@ import retrofit2.http.*
 
 interface ApiService {
 
+    // ===== Auth =====
+    // [Req B] Auth: envio de datos hacia API (registro/login).
     @POST("auth/register")
     suspend fun register(@Body body: RegisterRequest): AuthResponse
 
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse
 
+    // ===== Perfil =====
     @GET("me")
     suspend fun getProfile(@Header("Authorization") bearer: String): ProfileDto
 
@@ -21,6 +29,8 @@ interface ApiService {
         @Body body: ProfileUpdateRequest
     ): ProfileDto
 
+    // ===== Ejercicios =====
+    // [Req B] Listar + filtrar ejercicios por paginacion y query.
     @GET("exercises")
     suspend fun getExercises(
         @Header("Authorization") bearer: String?,
@@ -29,6 +39,7 @@ interface ApiService {
         @Query("q") q: String? = null
     ): List<ExerciseDto>
 
+    // [Req B] Endpoint publico para modo invitado online.
     @GET("public/exercises")
     suspend fun getPublicExercises(
         @Query("limit") limit: Int,
@@ -36,6 +47,7 @@ interface ApiService {
         @Query("q") q: String? = null
     ): List<ExerciseDto>
 
+    // [Req B] Detalle de ejercicio (enriquecimiento de tarjeta/lista).
     @GET("exercises/{id}")
     suspend fun getExerciseById(
         @Header("Authorization") bearer: String?,
@@ -47,6 +59,7 @@ interface ApiService {
         @Path("id") id: String
     ): ExerciseDto
 
+    // ===== Rutinas privadas =====
     @GET("routines")
     suspend fun getRoutines(@Header("Authorization") bearer: String): List<RoutineRemoteDto>
 
@@ -82,6 +95,8 @@ interface ApiService {
         @Path("id") id: String
     ): CommunityRoutineDto
 
+    // ===== Comunidad =====
+    // [Req B] Comunidad: lista y filtros (sort, q, paginacion).
     @GET("community/routines")
     suspend fun getCommunityRoutines(
         @Header("Authorization") bearer: String?,
@@ -99,6 +114,7 @@ interface ApiService {
         @Query("sort") sort: String? = null
     ): List<CommunityRoutineDto>
 
+    // [Req B] Accion sobre API (favoritos).
     @POST("community/routines/{id}/favorite")
     suspend fun favoriteCommunityRoutine(
         @Header("Authorization") bearer: String,
@@ -114,9 +130,11 @@ interface ApiService {
     @GET("community/favorites")
     suspend fun getCommunityFavorites(@Header("Authorization") bearer: String): List<CommunityRoutineDto>
 
+    // ===== Progreso =====
     @POST("progress")
     suspend fun sendProgress(
         @Header("Authorization") bearer: String,
         @Body body: ProgressUpsertRequest
     ): Response<Unit>
 }
+

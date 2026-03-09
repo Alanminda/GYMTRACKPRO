@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/data/local/dao/RoutineDao.kt
+ * Proposito: Define operaciones de acceso a datos (DAO) para Room.
+ */
 package com.example.gymtrackpro.data.local.dao
 
 import androidx.room.*
@@ -7,9 +12,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RoutineDao {
 
+    // [Req A - Read] Lista reactiva de rutinas propias activas.
     @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'OWN' ORDER BY updatedAt DESC")
     fun observeActiveByUser(userId: Int): Flow<List<RoutineEntity>>
 
+    // [Req A - Read] Version suspend para operaciones de negocio.
     @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'OWN' ORDER BY updatedAt DESC")
     suspend fun getActiveByUser(userId: Int): List<RoutineEntity>
 
@@ -28,15 +35,19 @@ interface RoutineDao {
     @Query("SELECT * FROM routines WHERE routineType = 'OWN' AND (syncState != 'SYNCED' OR deleted = 1)")
     suspend fun getPendingSync(): List<RoutineEntity>
 
+    // [Req A - Create]
     @Insert
     suspend fun insert(item: RoutineEntity): Long
 
+    // [Req A - Update]
     @Update
     suspend fun update(item: RoutineEntity)
 
+    // [Req A - Delete] Borrado fisico local.
     @Query("DELETE FROM routines WHERE id = :id")
     suspend fun hardDelete(id: Int)
 
+    // [Req C] Marca sincronizacion OK contra backend.
     @Query("UPDATE routines SET remoteId = :remoteId, syncState = 'SYNCED', deleted = 0, updatedAt = :updatedAt WHERE id = :localId")
     suspend fun markSynced(localId: Int, remoteId: String, updatedAt: Long = System.currentTimeMillis())
 
@@ -52,3 +63,4 @@ interface RoutineDao {
     @Query("SELECT * FROM routines WHERE userId = :userId AND deleted = 0 AND routineType = 'FAVORITE' ORDER BY updatedAt DESC")
     suspend fun getFavoritesByUser(userId: Int): List<RoutineEntity>
 }
+

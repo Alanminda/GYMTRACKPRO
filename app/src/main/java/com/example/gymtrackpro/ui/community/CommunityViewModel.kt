@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/community/CommunityViewModel.kt
+ * Proposito: Feed de comunidad, favoritos y detalle de rutinas publicas.
+ */
 package com.example.gymtrackpro.ui.community
 
 import androidx.lifecycle.LiveData
@@ -13,6 +18,7 @@ import kotlinx.coroutines.launch
 
 class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
 
+    // [Req C - MVVM] Estado observable para pantalla Comunidad.
     private val _items = MutableLiveData<List<CommunityRoutineDto>>(emptyList())
     val items: LiveData<List<CommunityRoutineDto>> = _items
 
@@ -35,6 +41,7 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
     private var guestMode: Boolean = false
 
     fun loadInitial() {
+        // [Req C - Corrutinas] Reinicia paginacion/filtros y dispara primera carga.
         viewModelScope.launch {
             guestMode = !repo.isLoggedIn()
             generation += 1
@@ -48,6 +55,7 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     fun onQueryChanged(text: String) {
+        // [Req B] Filtrado por titulo en API con debounce.
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(300)
@@ -75,6 +83,7 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
         val currentGeneration = generation
         loadingPage = true
         viewModelScope.launch {
+            // [Req B] Lista de comunidad via Retrofit (paginada + ordenada).
             _loading.value = true
             _error.value = null
             try {
@@ -91,6 +100,7 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
             } catch (_: CancellationException) {
                 // Cambios de busqueda/filtro cancelan carga anterior.
             } catch (_: Exception) {
+                // [Req B] Mensaje claro cuando falla red/backend.
                 if (currentGeneration != generation) return@launch
                 _error.value = if (guestMode) {
                     "Modo invitado: comunidad no disponible (sin red o backend desactualizado)"
@@ -108,6 +118,7 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun toggleFavorite(item: CommunityRoutineDto) {
         viewModelScope.launch {
+            // [Req B] Envio de accion a API (favorito/unfavorito).
             try {
                 if (!repo.isLoggedIn()) {
                     _message.value = "Inicia sesion para usar favoritos"
@@ -140,3 +151,4 @@ class CommunityViewModel(private val repo: GymRepository) : ViewModel() {
         return if (offset == 0) 10 else 20
     }
 }
+

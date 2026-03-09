@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/exercises/ExercisesViewModel.kt
+ * Proposito: Exploracion y detalle de ejercicios, incluyendo agregar a rutina.
+ */
 package com.example.gymtrackpro.ui.exercises
 
 import androidx.lifecycle.LiveData
@@ -13,6 +18,7 @@ import kotlinx.coroutines.launch
 
 class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
 
+    // [Req C - MVVM] Estados que la UI observa (lista/carga/error).
     private val _exercises = MutableLiveData<List<ExerciseEntity>>(emptyList())
     val exercises: LiveData<List<ExerciseEntity>> = _exercises
 
@@ -38,6 +44,7 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     fun loadExercises() {
+        // [Req C - Corrutinas] Detecta sesion sin bloquear UI.
         viewModelScope.launch {
             guestMode = !repo.isLoggedIn()
             resetAndLoad()
@@ -45,6 +52,7 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
     }
 
     fun onQueryChanged(text: String) {
+        // [Req B] Filtrado remoto/local con debounce para evitar sobrecarga de red.
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(300)
@@ -78,6 +86,8 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
         val currentGeneration = generation
 
         loadJob = viewModelScope.launch {
+            // [Req B] Carga paginada de API (listar/filtrar).
+            // [Req C] Fallback local segun modo (invitado offline / seleccion de rutina).
             loadingPage = true
             _loading.value = true
             _error.value = null
@@ -125,6 +135,7 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
                 if (currentGeneration != generation) return@launch
 
                 if (localOnlyMode) {
+                    // [Req B] Mensajes de estado de red para UX offline.
                     _error.value = when {
                         selectionMode && offset == 0 && page.isEmpty() ->
                             "Sin red: no hay ejercicios locales disponibles para anadir"
@@ -171,3 +182,4 @@ class ExercisesViewModel(private val repo: GymRepository) : ViewModel() {
         return if (offset == 0) INITIAL_PAGE_SIZE else NEXT_PAGE_SIZE
     }
 }
+

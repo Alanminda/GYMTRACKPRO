@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/profile/ProfileActivity.kt
+ * Proposito: Gestion de perfil y sesion del usuario.
+ */
 package com.example.gymtrackpro.ui.profile
 
 import android.content.Intent
@@ -17,6 +22,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class ProfileActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding de perfil.
     private lateinit var b: ActivityProfileBinding
     private val vm: ProfileViewModel by viewModels {
         ViewModelFactory(AppProvider.provideRepository(this))
@@ -30,6 +36,7 @@ class ProfileActivity : AppCompatActivity() {
         MainBottomNav.bind(this, b.bottomNav, R.id.nav_profile)
 
         b.btnEditProfile.setOnClickListener {
+            // Abre formulario de edicion precargando datos actuales.
             val name = vm.profile.value?.name ?: vm.session.value?.name.orEmpty()
             val email = vm.profile.value?.email ?: vm.session.value?.email.orEmpty()
             openEditDialog(name, email)
@@ -40,6 +47,7 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         vm.session.observe(this) { session ->
+            // Modo invitado: perfil solo lectura y sin edicion.
             if (session == null) {
                 b.tvName.text = "Invitado"
                 b.tvEmail.text = "Sin sesion"
@@ -55,6 +63,7 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         vm.profile.observe(this) { p ->
+            // Actualiza encabezado con datos remotos de perfil.
             if (p != null) {
                 b.tvName.text = p.name
                 b.tvEmail.text = p.email
@@ -64,6 +73,7 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
+        // [Req B] Estado de error visible en UI.
         vm.error.observe(this) { b.tvError.text = it ?: "" }
         vm.message.observe(this) { msg ->
             if (!msg.isNullOrBlank()) {
@@ -72,6 +82,7 @@ class ProfileActivity : AppCompatActivity() {
             }
         }
         vm.loggedOut.observe(this) { out ->
+            // Cierra stack para evitar volver con boton atras a sesiones previas.
             if (out) {
                 startActivity(
                     Intent(this, LoginActivity::class.java).apply {
@@ -91,6 +102,7 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun openEditDialog(currentName: String, currentEmail: String) {
+        // Formulario simple de actualizacion de perfil.
         val view = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
         val etName = view.findViewById<EditText>(R.id.etProfileName)
         val etEmail = view.findViewById<EditText>(R.id.etProfileEmail)
@@ -110,3 +122,4 @@ class ProfileActivity : AppCompatActivity() {
             .show()
     }
 }
+

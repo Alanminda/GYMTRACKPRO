@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/home/HomeActivity.kt
+ * Proposito: Pantalla principal de rutinas y su logica de presentacion.
+ */
 package com.example.gymtrackpro.ui.home
 
 import android.content.Intent
@@ -25,6 +30,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class HomeActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding para acceso seguro a vistas.
     private lateinit var b: ActivityHomeBinding
     private lateinit var connectivityManager: ConnectivityManager
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -63,6 +69,7 @@ class HomeActivity : AppCompatActivity() {
         setContentView(b.root)
         connectivityManager = getSystemService(ConnectivityManager::class.java)
 
+        // [Req C/UI] RecyclerView optimizada con adapter dedicado.
         b.rvExercises.adapter = adapter
         b.rvExercises.itemAnimator = null
         attachRoutineSwipeActions()
@@ -90,6 +97,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         vm.loading.observe(this) { isLoading ->
+            // [Req B] Indicador de carga segun estado de red/sincronizacion.
             val hasItems = vm.routines.value?.isNotEmpty() == true
             b.progress.visibility = if (isLoading && !hasItems) View.VISIBLE else View.GONE
         }
@@ -402,3 +410,4 @@ class HomeActivity : AppCompatActivity() {
             caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 }
+

@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/utils/AppProvider.kt
+ * Proposito: Utilidades de inyeccion y fabrica de ViewModels.
+ */
 package com.example.gymtrackpro.utils
 
 import android.content.Context
@@ -12,6 +17,7 @@ object AppProvider {
     @Volatile private var repo: GymRepository? = null
 
     fun provideRepository(context: Context): GymRepository {
+        // [Req A] Inicializa Room como fuente local principal (offline-first).
         val appContext = context.applicationContext
         val database = db ?: synchronized(this) {
             db ?: Room.databaseBuilder(appContext, AppDatabase::class.java, "gymtrack.db")
@@ -20,6 +26,7 @@ object AppProvider {
                 .also { db = it }
         }
 
+        // [Req C - Repository Pattern] Inyecta DAOs (local) + Retrofit API (remota).
         return repo ?: synchronized(this) {
             repo ?: GymRepository(
                 userDao = database.userLocalDao(),
@@ -32,3 +39,4 @@ object AppProvider {
         }
     }
 }
+

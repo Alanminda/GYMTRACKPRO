@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt
+ * Proposito: Detalle/seleccion de rutinas y acciones sobre ejercicios internos.
+ */
 package com.example.gymtrackpro.ui.routines
 
 import android.content.Intent
@@ -23,6 +28,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class RoutineDetailActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding para mantener acceso seguro a vistas.
     private lateinit var b: ActivityRoutineDetailBinding
 
     private val vm: RoutineDetailViewModel by viewModels {
@@ -34,6 +40,7 @@ class RoutineDetailActivity : AppCompatActivity() {
     private var currentCompletedCount: Int = 0
 
     private val adapter = ExerciseAdapter { exercise ->
+        // [Req B] Navega al detalle de ejercicio (datos ya obtenidos de API/cache local).
         startActivity(Intent(this, ExerciseDetailActivity::class.java).apply {
             putExtra(ExerciseDetailActivity.EXTRA_ID, exercise.id)
             putExtra(ExerciseDetailActivity.EXTRA_NAME, exercise.name)
@@ -52,12 +59,14 @@ class RoutineDetailActivity : AppCompatActivity() {
         b = ActivityRoutineDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // Datos de contexto de la rutina seleccionada.
         routineId = intent.getIntExtra(EXTRA_ROUTINE_ID, -1)
         val routineName = intent.getStringExtra(EXTRA_ROUTINE_NAME).orEmpty()
         routineType = intent.getStringExtra(EXTRA_ROUTINE_TYPE).orEmpty()
 
         b.tvTitle.text = if (routineName.isBlank()) "Rutina" else routineName
         if (routineType != "OWN") {
+            // Solo rutinas propias permiten agregar/eliminar ejercicios.
             b.btnAddExerciseToRoutine.visibility = View.GONE
         } else {
             b.btnAddExerciseToRoutine.visibility = View.VISIBLE
@@ -72,6 +81,7 @@ class RoutineDetailActivity : AppCompatActivity() {
             }
         }
         b.btnClearCompleted.setOnClickListener {
+            // [Req A - Update] Reinicia estado local de ejercicios completados.
             vm.clearAllCompletedExercises()
         }
 
@@ -81,17 +91,20 @@ class RoutineDetailActivity : AppCompatActivity() {
         attachExerciseSwipeActions()
 
         vm.exercises.observe(this) { items ->
+            // [Req C/UI] Actualiza RecyclerView + estado vacio.
             currentExercisesCount = items.size
             adapter.submit(items)
             b.tvEmptyRoutineExercises.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             refreshCompletionUi()
         }
         vm.completedExerciseIds.observe(this) { completed ->
+            // Refresca progreso visual y chips de estado en lista.
             currentCompletedCount = completed.size
             adapter.submitCompletedIds(completed)
             refreshCompletionUi()
         }
         vm.loading.observe(this) { b.progress.visibility = if (it) View.VISIBLE else View.GONE }
+        // [Req B] Mensajes de error/carga ante fallos de red o datos.
         vm.error.observe(this) { b.tvError.text = it ?: "" }
         vm.message.observe(this) { msg ->
             if (!msg.isNullOrBlank()) {
@@ -121,6 +134,8 @@ class RoutineDetailActivity : AppCompatActivity() {
     }
 
     private fun attachExerciseSwipeActions() {
+        // [Req C/UI] Gestos optimizados con ItemTouchHelper:
+        // izquierda -> marcar hecho; derecha (solo propias) -> eliminar.
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -154,10 +169,12 @@ class RoutineDetailActivity : AppCompatActivity() {
                 }
 
                 if (direction == ItemTouchHelper.LEFT) {
+                    // [Req A - Update] Toggle de estado completado por ejercicio.
                     vm.toggleExerciseCompleted(exercise.id)
                     adapter.notifyItemChanged(pos)
                 } else {
                     if (routineType == "OWN") {
+                        // [Req A - Delete] Confirmacion antes de eliminar de rutina.
                         confirmDeleteExercise(exercise.id, pos)
                     }
                     adapter.notifyItemChanged(pos)
@@ -230,6 +247,7 @@ class RoutineDetailActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteExercise(exerciseId: String, position: Int) {
+        // Confirmacion UX para evitar borrados accidentales.
         AlertDialog.Builder(this)
             .setTitle("Eliminar ejercicio")
             .setMessage("Estas seguro de eliminar este ejercicio de la rutina?")
@@ -289,6 +307,7 @@ class RoutineDetailActivity : AppCompatActivity() {
     }
 
     private fun refreshCompletionUi() {
+        // Barra de progreso de cumplimiento de rutina (0%-100%).
         val total = currentExercisesCount
         val done = currentCompletedCount.coerceAtMost(total)
         val percent = if (total <= 0) 0 else ((done * 100f) / total).toInt()
@@ -298,3 +317,4 @@ class RoutineDetailActivity : AppCompatActivity() {
         b.btnClearCompleted.alpha = if (done > 0) 1f else 0.5f
     }
 }
+

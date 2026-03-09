@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt
+ * Proposito: Exploracion y detalle de ejercicios, incluyendo agregar a rutina.
+ */
 package com.example.gymtrackpro.ui.exercises
 
 import android.content.Intent
@@ -17,6 +22,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class ExercisesActivity : AppCompatActivity() {
 
+    // [Req C/UI] ViewBinding + RecyclerView para lista de ejercicios.
     private lateinit var b: ActivityExercisesBinding
 
     private val vm: ExercisesViewModel by viewModels {
@@ -47,6 +53,7 @@ class ExercisesActivity : AppCompatActivity() {
         b = ActivityExercisesBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // [Req C/UI] RecyclerView optimizada: layout manager lineal + hasFixedSize.
         b.rvExercises.layoutManager = LinearLayoutManager(this)
         b.rvExercises.setHasFixedSize(true)
         b.rvExercises.adapter = adapter
@@ -82,6 +89,7 @@ class ExercisesActivity : AppCompatActivity() {
             }
         }
         vm.loading.observe(this) { isLoading ->
+            // [Req B] Estados de carga inicial/paginacion.
             b.progressInitial.visibility = if (isLoading && currentItemsCount == 0) View.VISIBLE else View.GONE
             b.progressPaging.visibility = if (isLoading && currentItemsCount > 0) View.VISIBLE else View.GONE
         }
@@ -101,3 +109,4 @@ class ExercisesActivity : AppCompatActivity() {
         const val EXTRA_TARGET_ROUTINE_ID = "extra_target_routine_id"
     }
 }
+

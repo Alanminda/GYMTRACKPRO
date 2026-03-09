@@ -1,3 +1,8 @@
+/**
+ * AUTO-DOC: GYMTRACKPRO
+ * Archivo: com/example/gymtrackpro/ui/routines/RoutinePickerActivity.kt
+ * Proposito: Detalle/seleccion de rutinas y acciones sobre ejercicios internos.
+ */
 package com.example.gymtrackpro.ui.routines
 
 import android.app.Activity
@@ -14,6 +19,7 @@ import com.example.gymtrackpro.utils.ViewModelFactory
 
 class RoutinePickerActivity : AppCompatActivity() {
 
+    // [Req C/UI] Pantalla simple de seleccion con RecyclerView + resultado a Activity llamadora.
     private lateinit var b: ActivityRoutinePickerBinding
 
     private val vm: RoutinePickerViewModel by viewModels {
@@ -22,6 +28,7 @@ class RoutinePickerActivity : AppCompatActivity() {
 
     private val adapter = RoutineAdapter(
         onClick = { routine ->
+            // Devuelve rutina elegida para "Anadir a rutina" desde detalle de ejercicio.
             setResult(
                 Activity.RESULT_OK,
                 Intent().apply {
@@ -44,14 +51,17 @@ class RoutinePickerActivity : AppCompatActivity() {
         b = ActivityRoutinePickerBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // [Req C/UI] Lista optimizada para seleccion rapida.
         b.rvRoutines.layoutManager = LinearLayoutManager(this)
         b.rvRoutines.setHasFixedSize(true)
         b.rvRoutines.adapter = adapter
 
         vm.routines.observe(this) { routines ->
+            // Estado vacio cuando no existen rutinas propias.
             adapter.submit(routines)
             b.tvEmpty.visibility = if (routines.isEmpty()) View.VISIBLE else View.GONE
         }
+        // [Req B] Mensaje de error si falla la lectura de datos.
         vm.error.observe(this) { b.tvError.text = it ?: "" }
 
         vm.loadRoutines()
@@ -62,3 +72,4 @@ class RoutinePickerActivity : AppCompatActivity() {
         const val EXTRA_SELECTED_ROUTINE_NAME = "extra_selected_routine_name"
     }
 }
+

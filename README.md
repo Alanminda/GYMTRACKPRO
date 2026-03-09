@@ -111,6 +111,149 @@ Se renderizan asi:
 
 ## Historial
 
+### 2026-03-09 00:xx - Final Inline Comments for Local Data Layer - `docs`
+
+- Resumen: se completa verificacion/comentado final de `data/local` (dao, db, entities) con foco en Room, relaciones y CRUD.
+- Archivos cubiertos:
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/ExerciseDao.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/ProgressDao.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineDao.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/RoutineExerciseDao.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/UserLocalDao.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/db/AppDatabase.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/ExerciseEntity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/ProgressEntity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/RoutineEntity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/RoutineExerciseEntity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/UserLocalEntity.kt`
+- Motivo:
+  - Cerrar cobertura de documentacion en la capa de persistencia local para defensa academica.
+- Impacto:
+  - Queda explicita la estructura Room (5 entidades), relaciones y operaciones CRUD principales.
+- Verificacion:
+  - Revisión manual archivo por archivo del bloque `local`.
+
+---
+
+### 2026-03-09 00:xx - Inline Comments for Remote Layer (api/dto/repository) - `docs`
+
+- Resumen: se completa documentacion de la capa remota solicitada (`data/remote/api`, `data/remote/dto`, `data/repository`) con comentarios por contrato/campo y secciones funcionales.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiClient.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/AuthDtos.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/ExerciseDtos.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/ProfileDtos.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/ProgressDtos.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/dto/RoutineDtos.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt`
+- Motivo:
+  - Dejar completamente trazable la parte de consumo API/DTO/sincronizacion para evaluacion tecnica.
+- Impacto:
+  - Claridad total de payloads, respuestas, endpoints y estrategia local-remota en Repository Pattern.
+- Verificacion:
+  - Revision manual de comentarios agregados por archivo y por bloque funcional.
+
+---
+
+### 2026-03-09 00:xx - Inline Comments for Network + Adapters - `docs`
+
+- Resumen: se documentan en detalle los archivos de `network` y `ui/adapters` solicitados, explicando contrato API, DTOs y render/interacciones de RecyclerView.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/network/ApiService.kt`
+  - `app/src/main/java/com/example/gymtrackpro/network/ExerciseDto.kt`
+  - `app/src/main/java/com/example/gymtrackpro/network/ProgressDto.kt`
+  - `app/src/main/java/com/example/gymtrackpro/network/RetrofitInstance.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/CommunityRoutineAdapter.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/ExerciseAdapter.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/adapters/RoutineAdapter.kt`
+- Motivo:
+  - Completar cobertura de comentarios en componentes de networking y listas, clave para evaluacion tecnica.
+- Impacto:
+  - Mayor claridad sobre consumo de API y comportamiento visual de tarjetas/listas.
+- Verificacion:
+  - Revision manual de comentarios agregados en cada archivo indicado.
+
+---
+
+### 2026-03-09 00:xx - Inline Comments Expansion (Auth/Community/Exercises/Home/Nav/Profile) - `docs`
+
+- Resumen: se expanden comentarios funcionales en todos los modulos UI solicitados, marcando funciones y bloques importantes con foco en requisitos tecnicos.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/auth/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/community/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/navigation/MainBottomNav.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/profile/*.kt`
+- Motivo:
+  - Documentar explicitamente para evaluacion academica el flujo MVVM, estados de red, corrutinas, CRUD y navegacion.
+- Impacto:
+  - Mayor legibilidad del codigo y mejor trazabilidad de requisitos A/B/C en capa de presentacion.
+- Verificacion:
+  - Revision manual de cada archivo solicitado en el arbol `ui`.
+
+---
+
+### 2026-03-09 00:xx - Extra Inline Comments in Routines Module - `docs`
+
+- Resumen: se agregan comentarios adicionales en funciones y bloques criticos del modulo `ui/routines`.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailActivity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutineDetailViewModel.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutinePickerActivity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/routines/RoutinePickerViewModel.kt`
+- Motivo:
+  - Reforzar trazabilidad de requisitos (A/B/C) en flujo de detalle/seleccion de rutinas.
+- Impacto:
+  - Mejor legibilidad para evaluacion tecnica y mantenimiento.
+- Verificacion:
+  - Revision manual de comentarios en funciones clave (swipe, CRUD, estado, MVVM/corrutinas).
+
+---
+
+### 2026-03-09 00:xx - Requirement-Driven Inline Comments (A/B/C) - `docs`
+
+- Resumen: se agregan comentarios funcionales en funciones y bloques clave remarcando cumplimiento de requisitos tecnicos obligatorios A/B/C.
+- Archivos modificados:
+  - `app/src/main/java/com/example/gymtrackpro/data/local/db/AppDatabase.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/entities/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/local/dao/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiClient.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/remote/api/ApiService.kt`
+  - `app/src/main/java/com/example/gymtrackpro/data/repository/GymRepository.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/**/*ViewModel.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/home/HomeActivity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/exercises/ExercisesActivity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/ui/placeholder/ThirdHubActivity.kt`
+  - `app/src/main/java/com/example/gymtrackpro/utils/AppProvider.kt`
+  - `app/src/main/java/com/example/gymtrackpro/utils/ViewModelFactory.kt`
+  - `app/src/main/java/com/example/gymtrackpro/network/*.kt`
+  - `app/src/main/java/com/example/gymtrackpro/MainActivity.kt`
+- Motivo:
+  - Hacer explicito en el codigo donde se cumple: Room (5 entidades + relaciones + CRUD), Retrofit/API, estados de red, MVVM, Repository Pattern, corrutinas y UI con RecyclerView/ViewBinding.
+- Impacto:
+  - El proyecto queda mas facil de defender tecnicamente en revision academica y mas mantenible para futuros cambios.
+- Verificacion:
+  - Revision manual de comentarios `[Req A]`, `[Req B]` y `[Req C]` en capas Data/Network/UI/ViewModel.
+
+---
+
+### 2026-03-09 00:xx - Full In-Code Documentation (App Kotlin Files) - `docs`
+
+- Resumen: se agregan comentarios de proposito en todos los archivos Kotlin de la app para documentar para que sirve cada unidad.
+- Archivos modificados:
+  - `app/src/main/java/**/*.kt` -> encabezado `AUTO-DOC: GYMTRACKPRO` con `Archivo` y `Proposito`.
+- Motivo:
+  - Cubrir requerimiento de documentar todo el codigo de la app sin alterar logica funcional.
+- Impacto:
+  - El codigo queda navegable y explicativo por archivo para revision academica y mantenimiento.
+- Verificacion:
+  - Muestreo manual en `MainActivity`, `GymRepository`, `HomeActivity` y resto de paquetes.
+
+---
+
 ### 2026-03-09 00:xx - Guest Online Access (Exercises + Community) - `fix`
 
 - Resumen: se habilita carga de ejercicios y comunidad en modo invitado con conexion (sin token), manteniendo acciones privadas con autenticacion.
